@@ -1,0 +1,50 @@
+services:
+  app:
+    build:
+      context: .
+      target: dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    env_file:
+      - .env.local
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017/careerxpo
+    depends_on:
+      mongo:
+        condition: service_healthy
+    restart: unless-stopped
+
+  mongo:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  seed:
+    build:
+      context: .
+      target: dev
+    command: node scripts/seed-admin.js
+    env_file:
+      - .env.local
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017/careerxpo
+    depends_on:
+      mongo:
+        condition: service_healthy
+    profiles:
+      - seed
+
+volumes:
+  mongo_data:

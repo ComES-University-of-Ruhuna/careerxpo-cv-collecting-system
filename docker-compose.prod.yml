@@ -1,0 +1,13 @@
+services:
+  app:
+    build:
+      context: .
+      target: production
+    volumes: []
+    environment:
+      - NODE_ENV=production
+    restart: always
+
+  mongo:
+    ports: []
+    restart: always
