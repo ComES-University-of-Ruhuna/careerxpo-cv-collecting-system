@@ -4,8 +4,11 @@ services:
       context: .
       target: production
     volumes: []
+    env_file:
+      - .env.local
     environment:
       - NODE_ENV=production
+      - MONGODB_URI=mongodb://mongo:27017/careerxpo
     restart: always
 
   mongo:
