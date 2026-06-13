@@ -68,8 +68,7 @@ export default function HomePage() {
         <div className="max-w-5xl mx-auto">
           <h2 className="text-2xl font-bold text-white text-center mb-3">About CareerXpo 3.0</h2>
           <p className="text-primary-100 text-center max-w-3xl mx-auto mb-10 text-sm md:text-base">
-            CareerXpo 3.0 is the official career fair platform developed by the Computer Engineering Society (ComES)
-            for the Faculty of Engineering, University of Ruhuna. It enables students to connect with
+            CareerXpo is the official career fair organized by the Faculty of Engineering, University of Ruhuna. This platform enables students to connect with
             participating companies during the career fair by submitting their CVs and expressing interest in job positions
             through a credit-based bidding system.
           </p>
