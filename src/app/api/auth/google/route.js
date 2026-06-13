@@ -10,7 +10,23 @@ function getOAuth2Client() {
 }
 
 export async function GET() {
-  const oauth2Client = getOAuth2Client();
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
+  if (!clientId || !clientSecret) {
+    console.error('Missing Google OAuth credentials:', { clientId: !!clientId, clientSecret: !!clientSecret });
+    return NextResponse.json(
+      { error: 'Google OAuth is not configured. Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET.' },
+      { status: 500 }
+    );
+  }
+
+  const oauth2Client = new google.auth.OAuth2(
+    clientId,
+    clientSecret,
+    `${appUrl}/api/auth/google/callback`
+  );
 
   const authUrl = oauth2Client.generateAuthUrl({
     access_type: 'offline',
