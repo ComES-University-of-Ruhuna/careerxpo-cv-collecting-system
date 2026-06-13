@@ -25,6 +25,7 @@ RUN npm ci --omit=dev
 
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/public ./public
 COPY --from=builder /app/scripts ./scripts
 
 EXPOSE 3000
