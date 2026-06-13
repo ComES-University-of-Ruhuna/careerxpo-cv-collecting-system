@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import User from '@/models/User';
 import Bid from '@/models/Bid';
+import Job from '@/models/Job';
 import { requireAdmin, isValidObjectId } from '@/lib/auth';
 import { logActivity } from '@/lib/activity-log';
 
@@ -46,6 +47,15 @@ export async function PUT(request, { params }) {
     const bids = await Bid.find({ user_id: params.id });
     const totalRefund = bids.reduce((sum, b) => sum + b.credits_spent, 0);
 
+    // Decrement current_applicants for each affected job
+    const jobIds = [...new Set(bids.map((b) => b.job_id.toString()))];
+    if (jobIds.length > 0) {
+      await Job.updateMany(
+        { _id: { $in: jobIds }, current_applicants: { $gt: 0 } },
+        { $inc: { current_applicants: -1 } }
+      );
+    }
+
     await Bid.deleteMany({ user_id: params.id });
     user.remaining_credits += totalRefund;
     await user.save();
@@ -73,6 +83,16 @@ export async function DELETE(request, { params }) {
     const user = await User.findById(params.id);
     if (!user || user.role !== 'student') {
       return NextResponse.json({ error: 'Student not found' }, { status: 404 });
+    }
+
+    // Decrement current_applicants for jobs the student bid on
+    const bidsToRemove = await Bid.find({ user_id: params.id }).select('job_id');
+    const jobIdsToDecrement = [...new Set(bidsToRemove.map((b) => b.job_id.toString()))];
+    if (jobIdsToDecrement.length > 0) {
+      await Job.updateMany(
+        { _id: { $in: jobIdsToDecrement }, current_applicants: { $gt: 0 } },
+        { $inc: { current_applicants: -1 } }
+      );
     }
 
     await Bid.deleteMany({ user_id: params.id });

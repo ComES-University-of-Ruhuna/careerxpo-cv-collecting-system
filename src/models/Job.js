@@ -8,6 +8,7 @@ const JobSchema = new mongoose.Schema({
   description: { type: String, default: '' },
   credit_cost: { type: Number, required: true, min: 1, default: 10 },
   max_applicants: { type: Number, default: null, min: 1 },
+  current_applicants: { type: Number, default: 0, min: 0 },
   deadline: { type: Date, default: null },
   is_closed: { type: Boolean, default: false },
   departments: [{ type: String, enum: DEPARTMENTS }],

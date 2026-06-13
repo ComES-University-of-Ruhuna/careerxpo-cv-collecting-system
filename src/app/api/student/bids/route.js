@@ -71,15 +71,21 @@ export async function POST(request) {
       return NextResponse.json({ error: 'The application deadline for this position has passed.' }, { status: 400 });
     }
 
-    // Check max applicants limit (first come first serve)
+    // Atomic max applicants check — reserve a slot
+    let slotReserved = false;
     if (job.max_applicants) {
-      const currentBidCount = await Bid.countDocuments({ job_id });
-      if (currentBidCount >= job.max_applicants) {
+      const updatedJob = await Job.findOneAndUpdate(
+        { _id: job_id, current_applicants: { $lt: job.max_applicants } },
+        { $inc: { current_applicants: 1 } },
+        { new: true }
+      );
+      if (!updatedJob) {
         return NextResponse.json(
           { error: 'This position has reached its maximum number of applicants.' },
           { status: 400 }
         );
       }
+      slotReserved = true;
     }
 
     // Atomic credit deduction with balance check
@@ -90,6 +96,10 @@ export async function POST(request) {
     );
 
     if (!updatedUser) {
+      // Refund the slot if we reserved one
+      if (slotReserved) {
+        await Job.findByIdAndUpdate(job_id, { $inc: { current_applicants: -1 } });
+      }
       return NextResponse.json(
         { error: `Insufficient credits. This position requires ${job.credit_cost} credits.` },
         { status: 400 }
@@ -104,12 +114,18 @@ export async function POST(request) {
         credits_spent: job.credit_cost,
       });
     } catch (bidError) {
-      // Duplicate key error (race condition) — refund credits
+      // Duplicate key error (race condition) — refund credits and slot
       if (bidError.code === 11000) {
         await User.findByIdAndUpdate(decoded.id, { $inc: { remaining_credits: job.credit_cost } });
+        if (slotReserved) {
+          await Job.findByIdAndUpdate(job_id, { $inc: { current_applicants: -1 } });
+        }
         return NextResponse.json({ error: 'You have already bid on this position' }, { status: 409 });
       }
       await User.findByIdAndUpdate(decoded.id, { $inc: { remaining_credits: job.credit_cost } });
+      if (slotReserved) {
+        await Job.findByIdAndUpdate(job_id, { $inc: { current_applicants: -1 } });
+      }
       throw bidError;
     }
 
