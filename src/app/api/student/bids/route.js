@@ -36,6 +36,15 @@ export async function POST(request) {
     await dbConnect();
     const { job_id } = await request.json();
 
+    // Check profile completion
+    const user = await User.findById(decoded.id);
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+    if (!user.profile_completed) {
+      return NextResponse.json({ error: 'Please complete your profile before bidding. Go to My Profile to add your registration number, name, department, and accept the data sharing consent.' }, { status: 403 });
+    }
+
     if (!job_id || !isValidObjectId(job_id)) {
       return NextResponse.json({ error: 'Valid Job ID is required' }, { status: 400 });
     }

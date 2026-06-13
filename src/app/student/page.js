@@ -21,6 +21,16 @@ export default function StudentDashboard() {
     <div>
       <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6">Student Dashboard</h1>
 
+      {!user?.profile_completed && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+          <p className="text-amber-800 font-medium">Complete your profile</p>
+          <p className="text-sm text-amber-700 mt-1">
+            Add your registration number, full name, department, and accept the data sharing consent to start bidding.
+          </p>
+          <a href="/student/profile" className="inline-block mt-2 text-sm font-medium text-primary-600 hover:underline">Go to My Profile →</a>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5 mb-8">
         <div className="bg-white rounded-xl border border-gray-200 p-5">
           <div className="flex items-center gap-3 mb-2">

@@ -127,6 +127,16 @@ export default function CompaniesPage() {
         </span>
       </div>
 
+      {!user?.profile_completed && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+          <p className="text-amber-800 font-medium">Complete your profile to start bidding</p>
+          <p className="text-sm text-amber-700 mt-1">
+            You need to add your registration number, full name, department, and accept the data sharing consent before you can bid on positions.
+          </p>
+          <a href="/student/profile" className="inline-block mt-2 text-sm font-medium text-primary-600 hover:underline">Go to My Profile →</a>
+        </div>
+      )}
+
       {companies.length === 0 ? (
         <p className="text-gray-500 text-center py-12">No companies listed yet.</p>
       ) : (
