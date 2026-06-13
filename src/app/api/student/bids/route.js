@@ -80,13 +80,13 @@ export async function POST(request) {
     }
 
     // Atomic credit deduction with balance check
-    const user = await User.findOneAndUpdate(
+    const updatedUser = await User.findOneAndUpdate(
       { _id: decoded.id, remaining_credits: { $gte: job.credit_cost } },
       { $inc: { remaining_credits: -job.credit_cost } },
       { new: true }
     );
 
-    if (!user) {
+    if (!updatedUser) {
       return NextResponse.json(
         { error: `Insufficient credits. This position requires ${job.credit_cost} credits.` },
         { status: 400 }
@@ -114,13 +114,13 @@ export async function POST(request) {
     try {
       const company = await Company.findById(job.company_id).select('name');
       sendBidConfirmationEmail({
-        to: user.email,
-        studentName: user.full_name || 'Student',
+        to: updatedUser.email,
+        studentName: updatedUser.full_name || 'Student',
         jobTitle: job.title,
         companyName: company?.name || 'Unknown Company',
         creditsSpent: job.credit_cost,
-        remainingCredits: user.remaining_credits,
-        cvUrl: user.cv_url,
+        remainingCredits: updatedUser.remaining_credits,
+        cvUrl: updatedUser.cv_url,
       }).catch((err) => console.error('Failed to send bid confirmation email:', err));
     } catch (emailErr) {
       console.error('Email setup error:', emailErr);
@@ -129,7 +129,7 @@ export async function POST(request) {
     return NextResponse.json({
       message: 'Bid placed successfully',
       bid,
-      remaining_credits: user.remaining_credits,
+      remaining_credits: updatedUser.remaining_credits,
     }, { status: 201 });
   } catch (error) {
     console.error('Bid error:', error);
