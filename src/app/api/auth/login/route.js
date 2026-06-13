@@ -23,7 +23,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Registration number and password are required' }, { status: 400 });
     }
 
-    const regNo = registration_no.toLowerCase();
+    const regNo = registration_no.toUpperCase();
     const user = await User.findOne({ registration_no: regNo });
 
     if (!user) {
