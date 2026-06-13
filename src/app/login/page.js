@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { HiAcademicCap } from 'react-icons/hi';
 import { FcGoogle } from 'react-icons/fc';
 import Footer from '@/components/Footer';
+import { useAuth } from '@/components/AuthProvider';
 
 function LoginErrorHandler() {
   const searchParams = useSearchParams();
@@ -22,6 +23,22 @@ function LoginErrorHandler() {
 }
 
 export default function LoginPage() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && user) {
+      router.replace(user.role === 'admin' ? '/admin' : '/student');
+    }
+  }, [user, loading, router]);
+
+  if (loading || user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
