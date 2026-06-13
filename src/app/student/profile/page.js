@@ -22,7 +22,7 @@ export default function ProfilePage() {
     { value: 'DMME', label: 'DMME - Mechanical & Manufacturing Engineering' },
     { value: 'COM', label: 'COM - Computer Engineering' },
     { value: 'DCEE', label: 'DCEE - Civil & Environmental Engineering' },
-    { value: 'DMENA', label: 'DMENA - Metallurgical & Materials Engineering' },
+    { value: 'DMENA', label: 'DMENA - Marine Engineering and Naval Architecture' },
   ];
 
   useEffect(() => {
