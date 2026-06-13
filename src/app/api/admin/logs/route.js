@@ -21,7 +21,7 @@ export async function GET(request) {
         .sort({ timestamp: -1 })
         .skip((page - 1) * limit)
         .limit(limit)
-        .populate('admin_id', 'full_name email')
+        .populate('admin_id', 'full_name email registration_no')
         .lean(),
       ActivityLog.countDocuments(filter),
     ]);

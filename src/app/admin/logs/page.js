@@ -138,7 +138,20 @@ export default function AdminLogs() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-gray-700 max-w-md truncate">{log.details || '—'}</td>
-                      <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{log.admin_id?.full_name || log.admin_id?.email || '—'}</td>
+                      <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
+                        {log.admin_id ? (
+                          <div>
+                            <div className="font-medium text-gray-900">
+                              {log.admin_id.full_name || log.admin_id.registration_no || log.admin_id.email || 'Admin'}
+                            </div>
+                            {log.admin_id.full_name && (log.admin_id.registration_no || log.admin_id.email) && (
+                              <div className="text-xs text-gray-400">
+                                {log.admin_id.registration_no || log.admin_id.email}
+                              </div>
+                            )}
+                          </div>
+                        ) : '—'}
+                      </td>
                     </tr>
                   );
                 })}
