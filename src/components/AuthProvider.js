@@ -128,7 +128,7 @@ function AuthProviderInner({ children }) {
     setToken(null);
     localStorage.removeItem('careerxpo_token');
     fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
-    router.push('/login');
+    window.location.href = '/login';
   }
 
   function updateUser(updates) {
