@@ -60,6 +60,9 @@ function AuthProviderInner({ children }) {
   }
 
   async function exchangeCode(code) {
+    // Primary path: the OAuth callback set an httpOnly cookie before redirecting,
+    // so cookie auth always works. Exchange is best-effort to also get a token
+    // for localStorage (used by Bearer-auth API calls).
     try {
       const res = await fetch('/api/auth/exchange', {
         method: 'POST',
@@ -71,27 +74,30 @@ function AuthProviderInner({ children }) {
         const data = await res.json();
         localStorage.setItem('careerxpo_token', data.token);
         setToken(data.token);
-        fetchUser(data.token, true);
+        await fetchUser(data.token, true);
         return;
       }
     } catch {}
-    // Fallback: the OAuth callback already set an httpOnly cookie,
-    // so try fetching the user via cookie auth
+
+    // Fallback: use cookie auth via /api/auth/me
     try {
       const meRes = await fetch('/api/auth/me', { credentials: 'include' });
       if (meRes.ok) {
         const data = await meRes.json();
         setUser(data.user);
-        // We don't have the raw token, but cookie auth works for API calls
         setToken('cookie');
+        toast.success(`Welcome, ${data.user.full_name || data.user.email || 'Student'}!`);
         setLoading(false);
         setOauthLoading(false);
-        toast.success(`Welcome, ${data.user.full_name || data.user.email || 'Student'}!`);
         return;
       }
     } catch {}
+
+    // Both failed — sign-in didn't complete. Send back to login.
     setOauthLoading(false);
     setLoading(false);
+    toast.error('Sign-in failed. Please try again.');
+    router.replace('/login');
   }
 
   async function fetchUser(t, isNewLogin = false) {
