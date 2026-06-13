@@ -20,8 +20,8 @@ FROM node:18-alpine AS production
 WORKDIR /app
 ENV NODE_ENV=production
 
-COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+RUN apk add --no-cache libc6-compat
+RUN npm install --no-save sharp
 
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
