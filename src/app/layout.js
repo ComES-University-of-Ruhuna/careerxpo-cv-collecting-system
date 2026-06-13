@@ -7,6 +7,7 @@ export const metadata = {
   description: 'Career Fair CV Collection and Bidding System',
 };
 
+
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
