@@ -4,6 +4,7 @@ import dbConnect from '@/lib/db';
 import User from '@/models/User';
 import { signToken } from '@/lib/auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { normalizeRegNo } from '@/lib/validation';
 
 export async function POST(request) {
   try {
@@ -23,7 +24,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Registration number and password are required' }, { status: 400 });
     }
 
-    const regNo = registration_no.toUpperCase();
+    const regNo = normalizeRegNo(registration_no);
     const user = await User.findOne({ registration_no: regNo });
 
     if (!user) {
