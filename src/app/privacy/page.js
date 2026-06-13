@@ -12,8 +12,8 @@ export default function PrivacyPage() {
           <Link href="/" className="text-primary-600 hover:text-primary-800 font-bold text-lg">← CareerXpo 3.0</Link>
         </div>
       </nav>
-      <main className="max-w-4xl mx-auto px-4 py-12">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Privacy Policy</h1>
+      <main className="max-w-4xl mx-auto px-4 py-8 sm:py-12">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Privacy Policy</h1>
         <p className="text-sm text-gray-500 mb-8">Last updated: June 2026</p>
 
         <div className="space-y-6">

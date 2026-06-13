@@ -79,11 +79,11 @@ export default function AdminGuestPostsPage() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Guest Job Posts</h1>
-        <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Guest Job Posts</h1>
+        <div className="flex gap-1 bg-gray-100 rounded-lg p-1 self-start sm:self-auto">
           {STATUS_TABS.map((tab) => (
-            <button key={tab.value} onClick={() => { setStatus(tab.value); setSelected(null); }} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition ${status === tab.value ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>
+            <button key={tab.value} onClick={() => { setStatus(tab.value); setSelected(null); }} className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition ${status === tab.value ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>
               {tab.icon} {tab.label}
             </button>
           ))}

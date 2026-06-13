@@ -88,9 +88,9 @@ export default function AdminCompanies() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Company Management</h1>
-        <button onClick={openNew} className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition text-sm font-medium">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Company Management</h1>
+        <button onClick={openNew} className="flex items-center gap-2 px-4 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition text-sm font-medium self-start sm:self-auto">
           <HiPlus /> Add Company
         </button>
       </div>
@@ -124,7 +124,8 @@ export default function AdminCompanies() {
       )}
 
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <table className="w-full">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[600px]">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
               <th className="text-left px-5 py-3 text-sm font-medium text-gray-500">Company</th>
@@ -158,6 +159,7 @@ export default function AdminCompanies() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

@@ -96,10 +96,10 @@ export default function AdminStudents() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Student Management</h1>
+      <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6">Student Management</h1>
 
       {/* Search */}
-      <form onSubmit={handleSearch} className="flex gap-3 mb-6">
+      <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1">
           <HiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
