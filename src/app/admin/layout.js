@@ -1,6 +1,6 @@
 'use client';
 
-import { AuthProvider, useAuth } from '@/components/AuthProvider';
+import { useAuth } from '@/components/AuthProvider';
 import Navbar from '@/components/Navbar';
 import Sidebar from '@/components/Sidebar';
 import Footer from '@/components/Footer';
@@ -51,8 +51,6 @@ function AdminGuard({ children }) {
 
 export default function AdminLayout({ children }) {
   return (
-    <AuthProvider>
-      <AdminGuard>{children}</AdminGuard>
-    </AuthProvider>
+    <AdminGuard>{children}</AdminGuard>
   );
 }

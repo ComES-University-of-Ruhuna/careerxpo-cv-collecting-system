@@ -1,6 +1,6 @@
 'use client';
 
-import { AuthProvider, useAuth } from '@/components/AuthProvider';
+import { useAuth } from '@/components/AuthProvider';
 import Navbar from '@/components/Navbar';
 import Sidebar from '@/components/Sidebar';
 import Footer from '@/components/Footer';
@@ -48,8 +48,6 @@ function StudentGuard({ children }) {
 
 export default function StudentLayout({ children }) {
   return (
-    <AuthProvider>
-      <StudentGuard>{children}</StudentGuard>
-    </AuthProvider>
+    <StudentGuard>{children}</StudentGuard>
   );
 }

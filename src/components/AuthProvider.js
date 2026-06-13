@@ -107,10 +107,10 @@ function AuthProviderInner({ children }) {
           toast.success(`Welcome, ${data.user.full_name || data.user.email || 'Student'}!`);
         }
       } else {
-        logout();
+        clearAuth();
       }
     } catch {
-      logout();
+      clearAuth();
     } finally {
       setLoading(false);
       setOauthLoading(false);
@@ -123,11 +123,17 @@ function AuthProviderInner({ children }) {
     localStorage.setItem('careerxpo_token', tokenValue);
   }
 
-  function logout() {
+  function clearAuth() {
     setUser(null);
     setToken(null);
     localStorage.removeItem('careerxpo_token');
-    fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+  }
+
+  async function logout() {
+    clearAuth();
+    try {
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+    } catch {}
     window.location.href = '/login';
   }
 
