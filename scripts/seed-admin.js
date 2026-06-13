@@ -5,7 +5,7 @@ require('dotenv').config({ path: '.env.local' });
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/careerxpo';
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Admin@123';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 
 const UserSchema = new mongoose.Schema({
   google_id: { type: String, unique: true, sparse: true },

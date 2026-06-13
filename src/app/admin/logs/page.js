@@ -15,6 +15,8 @@ const ACTION_LABELS = {
   student_bids_reset: { label: 'Bids Reset', color: 'bg-amber-100 text-amber-700' },
   student_deleted: { label: 'Student Deleted', color: 'bg-red-100 text-red-700' },
   credits_added: { label: 'Credits Added', color: 'bg-purple-100 text-purple-700' },
+  guest_post_approved: { label: 'Guest Post Approved', color: 'bg-teal-100 text-teal-700' },
+  guest_post_rejected: { label: 'Guest Post Rejected', color: 'bg-orange-100 text-orange-700' },
 };
 
 const FILTER_OPTIONS = [
@@ -28,6 +30,8 @@ const FILTER_OPTIONS = [
   { value: 'student_bids_reset', label: 'Bids Reset' },
   { value: 'student_deleted', label: 'Student Deleted' },
   { value: 'credits_added', label: 'Credits Added' },
+  { value: 'guest_post_approved', label: 'Guest Post Approved' },
+  { value: 'guest_post_rejected', label: 'Guest Post Rejected' },
 ];
 
 export default function AdminLogs() {

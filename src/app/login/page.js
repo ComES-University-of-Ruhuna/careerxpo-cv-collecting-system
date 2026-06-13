@@ -68,8 +68,8 @@ export default function LoginPage() {
           </div>
 
           <p className="text-center text-xs text-gray-400 mt-6">
-            Use your university Gmail account for student access.
-            After signing in, complete your profile with your registration number.
+            Use your Gmail account for student access.
+            After signing in, complete your profile with your registration number and department.
           </p>
         </div>
       </div>

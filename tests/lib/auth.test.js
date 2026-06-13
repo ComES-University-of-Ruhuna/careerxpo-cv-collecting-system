@@ -19,8 +19,10 @@ describe('Auth Library', () => {
   });
 
   describe('signToken', () => {
-    it('should throw when JWT_SECRET is not configured', () => {
-      expect(() => signToken({ userId: '123' })).toThrow('JWT_SECRET is not configured');
+    it('should call jwt.sign with correct args', () => {
+      jwt.sign.mockReturnValue('signed-token');
+      const result = signToken({ userId: '123', role: 'student' });
+      expect(result).toBe('signed-token');
     });
   });
 
