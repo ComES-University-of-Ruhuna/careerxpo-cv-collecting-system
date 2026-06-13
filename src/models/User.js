@@ -24,6 +24,8 @@ const UserSchema = new mongoose.Schema({
   cv_drive_id: { type: String, default: null },
   cv_url: { type: String, default: null },
   remaining_credits: { type: Number, default: 100 },
+  cv_consent: { type: Boolean, default: false },
+  cv_consent_at: { type: Date, default: null },
   profile_completed: { type: Boolean, default: false },
   created_at: { type: Date, default: Date.now },
 });

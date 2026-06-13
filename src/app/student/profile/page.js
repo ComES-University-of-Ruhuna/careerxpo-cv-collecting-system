@@ -14,6 +14,7 @@ export default function ProfilePage() {
     full_name: '',
     linkedin: '',
     department: '',
+    cv_consent: false,
   });
 
   const departments = [
@@ -31,6 +32,7 @@ export default function ProfilePage() {
         full_name: user.full_name || '',
         linkedin: user.linkedin || '',
         department: user.department || '',
+        cv_consent: user.cv_consent || false,
       });
     }
   }, [user]);
@@ -178,6 +180,24 @@ export default function ProfilePage() {
             placeholder="https://linkedin.com/in/yourprofile"
             className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition"
           />
+        </div>
+
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.cv_consent}
+              onChange={(e) => setForm({ ...form, cv_consent: e.target.checked })}
+              className="mt-1 h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+            />
+            <span className="text-sm text-gray-700">
+              I agree to share my CV and profile information with companies I bid on through CareerXpo. 
+              I understand that my data will be handled in accordance with the{' '}
+              <a href="/privacy" target="_blank" className="text-primary-600 hover:underline">Privacy Policy</a>{' '}
+              and{' '}
+              <a href="/terms" target="_blank" className="text-primary-600 hover:underline">Terms of Service</a>.
+            </span>
+          </label>
         </div>
 
         <button

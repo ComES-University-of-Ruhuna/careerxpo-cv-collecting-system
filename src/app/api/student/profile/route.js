@@ -28,7 +28,15 @@ export async function PUT(request) {
     const user = await User.findById(decoded.id);
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
-    const { registration_no, full_name, linkedin, department } = await request.json();
+    const { registration_no, full_name, linkedin, department, cv_consent } = await request.json();
+
+    // Handle CV consent
+    if (cv_consent !== undefined) {
+      user.cv_consent = !!cv_consent;
+      if (cv_consent && !user.cv_consent_at) {
+        user.cv_consent_at = new Date();
+      }
+    }
 
     // Validate registration number if provided
     if (registration_no !== undefined && registration_no !== '') {
@@ -67,9 +75,11 @@ export async function PUT(request) {
       user.department = department || null;
     }
 
-    // Mark profile as completed if reg_no, full_name, and department are set
-    if (user.registration_no && user.full_name && user.department) {
+    // Mark profile as completed if reg_no, full_name, department, and cv_consent are set
+    if (user.registration_no && user.full_name && user.department && user.cv_consent) {
       user.profile_completed = true;
+    } else {
+      user.profile_completed = false;
     }
 
     await user.save();
