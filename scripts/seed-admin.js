@@ -1,7 +1,11 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
-require('dotenv').config({ path: '.env.local' });
+try {
+  require('dotenv').config({ path: '.env.local' });
+} catch (e) {
+  // dotenv is not available in production, environment variables should be injected
+}
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/careerxpo';
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';

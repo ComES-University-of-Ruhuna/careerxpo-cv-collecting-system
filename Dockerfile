@@ -20,6 +20,9 @@ FROM node:18-alpine AS production
 WORKDIR /app
 ENV NODE_ENV=production
 
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/scripts ./scripts
