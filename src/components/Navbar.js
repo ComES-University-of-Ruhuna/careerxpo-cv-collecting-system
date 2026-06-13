@@ -14,7 +14,7 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <div className="flex justify-between h-14 sm:h-16 items-center gap-2">
           <Link href="/" className="flex items-center gap-2 shrink-0">
-            <Image src={logo} alt="CareerXpo 3.0" height={28} className="h-7 w-auto dark:invert" priority />
+            <Image src={logo} alt="CareerXpo 3.0" height={28} className="h-7 w-auto" priority />
             <span className="text-xs text-gray-500 hidden lg:inline">Faculty of Engineering, University of Ruhuna</span>
           </Link>
 
