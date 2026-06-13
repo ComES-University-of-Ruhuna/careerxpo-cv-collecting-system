@@ -44,6 +44,9 @@ export async function POST(request) {
     if (!user.profile_completed) {
       return NextResponse.json({ error: 'Please complete your profile before bidding. Go to My Profile to add your registration number, name, department, and accept the data sharing consent.' }, { status: 403 });
     }
+    if (!user.cv_url) {
+      return NextResponse.json({ error: 'Please upload your CV before bidding. Go to My Profile to upload your CV.' }, { status: 403 });
+    }
 
     if (!job_id || !isValidObjectId(job_id)) {
       return NextResponse.json({ error: 'Valid Job ID is required' }, { status: 400 });

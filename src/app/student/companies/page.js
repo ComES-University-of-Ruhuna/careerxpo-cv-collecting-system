@@ -137,6 +137,16 @@ export default function CompaniesPage() {
         </div>
       )}
 
+      {user?.profile_completed && !user?.cv_url && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+          <p className="text-amber-800 font-medium">Upload your CV to start bidding</p>
+          <p className="text-sm text-amber-700 mt-1">
+            You must upload your CV (PDF) before you can bid on any position.
+          </p>
+          <a href="/student/profile" className="inline-block mt-2 text-sm font-medium text-primary-600 hover:underline">Go to My Profile →</a>
+        </div>
+      )}
+
       {companies.length === 0 ? (
         <p className="text-gray-500 text-center py-12">No companies listed yet.</p>
       ) : (
@@ -172,7 +182,9 @@ export default function CompaniesPage() {
                       const hasBid = !!bidInfo;
                       const isFull = job.max_applicants && job.current_applicants >= job.max_applicants && !hasBid;
                       const isClosed = job.is_closed || (job.deadline && new Date(job.deadline) < new Date());
-                      const cantBid = isClosed || isFull;
+                      const needsProfile = !user?.profile_completed;
+                      const needsCV = !user?.cv_url;
+                      const cantBid = isClosed || isFull || needsProfile || needsCV;
                       return (
                         <div key={job._id} className={`bg-gray-50 rounded-lg p-4 ${isClosed && !hasBid ? 'opacity-60' : ''}`}>
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
@@ -213,7 +225,7 @@ export default function CompaniesPage() {
                               >
                                 {hasBid ? (
                                   <span className="flex items-center gap-1"><HiCheck /> Applied</span>
-                                ) : isClosed ? 'Closed' : isFull ? 'Full' : bidding === job._id ? 'Bidding...' : 'Bid / Apply'}
+                                ) : isClosed ? 'Closed' : isFull ? 'Full' : needsProfile ? 'Complete Profile' : needsCV ? 'Upload CV' : bidding === job._id ? 'Bidding...' : 'Bid / Apply'}
                               </button>
                             </div>
                           </div>
