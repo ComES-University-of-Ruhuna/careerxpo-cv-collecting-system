@@ -139,8 +139,21 @@ export default function ProfilePage() {
           <input
             type="text"
             value={form.registration_no}
-            onChange={(e) => setForm({ ...form, registration_no: e.target.value })}
-            placeholder="e.g., EG/2021/1234"
+            onChange={(e) => {
+              let val = e.target.value.toUpperCase().replace(/[^A-Z0-9/]/g, '');
+              // Auto-insert slashes: EG/XXXX/XXXX
+              const digits = val.replace(/[^A-Z0-9]/g, '');
+              if (digits.length <= 2) {
+                val = digits;
+              } else if (digits.length <= 6) {
+                val = digits.slice(0, 2) + '/' + digits.slice(2);
+              } else {
+                val = digits.slice(0, 2) + '/' + digits.slice(2, 6) + '/' + digits.slice(6, 10);
+              }
+              setForm({ ...form, registration_no: val });
+            }}
+            maxLength={12}
+            placeholder="EG/2021/1234"
             className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition"
           />
           <p className="text-xs text-gray-400 mt-1">Format: EG/20XX/XXXX (e.g., EG/2021/1234)</p>
