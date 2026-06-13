@@ -119,9 +119,9 @@ export default function CompaniesPage() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Companies & Job Directory</h1>
-        <span className="bg-primary-100 text-primary-700 px-3 py-1 rounded-full text-sm font-medium">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Companies & Job Directory</h1>
+        <span className="bg-primary-100 text-primary-700 px-3 py-1 rounded-full text-sm font-medium self-start sm:self-auto">
           <HiCurrencyDollar className="inline mr-1" />
           {user?.remaining_credits ?? 0} credits left
         </span>

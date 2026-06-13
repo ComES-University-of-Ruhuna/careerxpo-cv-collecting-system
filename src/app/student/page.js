@@ -19,9 +19,9 @@ export default function StudentDashboard() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Student Dashboard</h1>
+      <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6">Student Dashboard</h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5 mb-8">
         <div className="bg-white rounded-xl border border-gray-200 p-5">
           <div className="flex items-center gap-3 mb-2">
             <div className="p-2 bg-primary-100 rounded-lg">
@@ -68,14 +68,14 @@ export default function StudentDashboard() {
           </div>
           <div className="divide-y divide-gray-100">
             {bids.map((bid) => (
-              <div key={bid._id} className="p-4 flex justify-between items-center">
-                <div>
-                  <p className="font-medium text-gray-900">{bid.job_id?.title || 'Unknown Position'}</p>
-                  <p className="text-sm text-gray-500">
+              <div key={bid._id} className="p-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
+                <div className="min-w-0">
+                  <p className="font-medium text-gray-900 truncate">{bid.job_id?.title || 'Unknown Position'}</p>
+                  <p className="text-sm text-gray-500 truncate">
                     {bid.job_id?.company_id?.name || 'Unknown Company'} · {new Date(bid.timestamp).toLocaleDateString()}
                   </p>
                 </div>
-                <span className="text-sm font-medium text-primary-600">-{bid.credits_spent} credits</span>
+                <span className="text-sm font-medium text-primary-600 shrink-0">-{bid.credits_spent} credits</span>
               </div>
             ))}
           </div>
