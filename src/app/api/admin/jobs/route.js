@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import Job from '@/models/Job';
+import User from '@/models/User';
+import Company from '@/models/Company';
 import { requireAdmin, isValidObjectId } from '@/lib/auth';
 import { logActivity } from '@/lib/activity-log';
+import { sendJobAlertEmails } from '@/lib/email';
 
 export async function GET(request) {
   try {
@@ -64,6 +67,35 @@ export async function POST(request) {
       departments: departments || [],
     });
     await logActivity(admin.id, 'job_created', 'job', job._id, `Created job "${title}"`);
+
+    // Send email alerts to students in relevant departments (non-blocking)
+    try {
+      const depts = departments || [];
+      const userFilter = { role: 'student', profile_completed: true };
+      if (depts.length > 0) {
+        userFilter.$or = [
+          { department: { $in: depts } },
+          { department: null },
+        ];
+      }
+      const students = await User.find(userFilter).select('email').lean();
+      const emails = students.map((s) => s.email).filter(Boolean);
+
+      if (emails.length > 0) {
+        const company = await Company.findById(company_id).select('name').lean();
+        sendJobAlertEmails({
+          recipients: emails,
+          jobTitle: title,
+          companyName: company?.name || 'Unknown Company',
+          creditCost: parsedCost,
+          deadline: deadline ? new Date(deadline) : null,
+          departments: depts,
+        }).catch((err) => console.error('Failed to send job alert emails:', err));
+      }
+    } catch (emailErr) {
+      console.error('Job alert email setup error:', emailErr);
+    }
+
     return NextResponse.json({ job }, { status: 201 });
   } catch (error) {
     if (error.message === 'Unauthorized') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
