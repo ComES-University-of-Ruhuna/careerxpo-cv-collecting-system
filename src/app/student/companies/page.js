@@ -4,7 +4,7 @@ import { useAuth } from '@/components/AuthProvider';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import ReactMarkdown from 'react-markdown';
-import { HiCurrencyDollar, HiExternalLink, HiCheck, HiUpload, HiDocumentText } from 'react-icons/hi';
+import { HiCurrencyDollar, HiExternalLink, HiCheck, HiUpload, HiDocumentText, HiSearch } from 'react-icons/hi';
 
 export default function CompaniesPage() {
   const { token, user, updateUser } = useAuth();
@@ -15,6 +15,7 @@ export default function CompaniesPage() {
   const [loading, setLoading] = useState(true);
   const [bidding, setBidding] = useState(null);
   const [uploading, setUploading] = useState(null);
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     if (!token) return;
@@ -163,8 +164,24 @@ export default function CompaniesPage() {
       {companies.length === 0 ? (
         <p className="text-gray-500 text-center py-12">No companies listed yet.</p>
       ) : (
+        <>
+        <div className="relative mb-4">
+          <HiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search companies or job titles..."
+            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
+          />
+        </div>
         <div className="space-y-6">
-          {companies.map((company) => (
+          {companies.filter((company) => {
+            if (!search.trim()) return true;
+            const q = search.toLowerCase();
+            if (company.name.toLowerCase().includes(q)) return true;
+            return company.jobs?.some((job) => job.title.toLowerCase().includes(q));
+          }).map((company) => (
             <div key={company._id} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
               <div className="p-5 border-b border-gray-100">
                 <div className="flex items-center gap-4">
@@ -307,6 +324,7 @@ export default function CompaniesPage() {
             </div>
           ))}
         </div>
+        </>
       )}
     </div>
   );
