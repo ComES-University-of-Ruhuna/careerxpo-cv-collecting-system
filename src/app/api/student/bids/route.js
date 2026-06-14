@@ -75,7 +75,13 @@ export async function POST(request) {
     let slotReserved = false;
     if (job.max_applicants) {
       const updatedJob = await Job.findOneAndUpdate(
-        { _id: job_id, current_applicants: { $lt: job.max_applicants } },
+        {
+          _id: job_id,
+          $or: [
+            { current_applicants: { $lt: job.max_applicants } },
+            { current_applicants: { $exists: false } },
+          ],
+        },
         { $inc: { current_applicants: 1 } },
         { new: true }
       );
