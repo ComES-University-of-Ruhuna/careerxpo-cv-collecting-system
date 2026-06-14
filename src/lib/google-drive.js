@@ -124,3 +124,41 @@ export async function uploadCVToDrive(fileBuffer, registrationNo, studentName, c
     webViewLink: file.data.webViewLink,
   };
 }
+
+export async function getJobFolderLink(companyName, jobTitle) {
+  const drive = getDrive();
+  const rootFolderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
+
+  const safeCompany = companyName.replace(/[^a-zA-Z0-9 ]/g, '').trim().replace(/\s+/g, '_');
+  const safeFolderName = safeCompany.replace(/'/g, "\\'");
+
+  // Find company folder
+  const companyResult = await drive.files.list({
+    q: `name='${safeFolderName}' and '${rootFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+    fields: 'files(id, webViewLink)',
+  });
+
+  if (!companyResult.data.files?.length) {
+    return null;
+  }
+
+  const companyFolderId = companyResult.data.files[0].id;
+
+  if (!jobTitle) {
+    return `https://drive.google.com/drive/folders/${companyFolderId}`;
+  }
+
+  const safeJob = jobTitle.replace(/[^a-zA-Z0-9 ]/g, '').trim().replace(/\s+/g, '_');
+  const safeJobName = safeJob.replace(/'/g, "\\'");
+
+  const jobResult = await drive.files.list({
+    q: `name='${safeJobName}' and '${companyFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+    fields: 'files(id)',
+  });
+
+  if (!jobResult.data.files?.length) {
+    return null;
+  }
+
+  return `https://drive.google.com/drive/folders/${jobResult.data.files[0].id}`;
+}

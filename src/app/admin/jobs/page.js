@@ -3,7 +3,7 @@
 import { useAuth } from '@/components/AuthProvider';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { HiPlus, HiPencil, HiTrash, HiX, HiLockClosed, HiLockOpen, HiDownload } from 'react-icons/hi';
+import { HiPlus, HiPencil, HiTrash, HiX, HiLockClosed, HiLockOpen, HiDownload, HiFolderOpen } from 'react-icons/hi';
 
 export default function AdminJobs() {
   const { token } = useAuth();
@@ -13,6 +13,7 @@ export default function AdminJobs() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({ company_id: '', title: '', description: '', credit_cost: '10', max_applicants: '', deadline: '', departments: [] });
+  const [loadingFolder, setLoadingFolder] = useState(null);
 
   const allDepartments = ['DEIE', 'DMME', 'COM', 'DCEE', 'DMENA'];
 
@@ -145,6 +146,25 @@ export default function AdminJobs() {
       toast.success('Exported successfully');
     } catch {
       toast.error('Export failed');
+    }
+  }
+
+  async function handleDriveFolder(jobId) {
+    setLoadingFolder(jobId);
+    try {
+      const res = await fetch(`/api/admin/jobs/${jobId}/drive-folder`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || 'Failed to get folder link');
+        return;
+      }
+      window.open(data.folder_url, '_blank');
+    } catch {
+      toast.error('Failed to get Drive folder link');
+    } finally {
+      setLoadingFolder(null);
     }
   }
 
@@ -295,6 +315,9 @@ export default function AdminJobs() {
                     {(() => { const s = getJobStatus(j); return <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${s.color}`}>{s.label}</span>; })()}
                   </td>
                   <td className="px-5 py-3 text-right whitespace-nowrap">
+                    <button onClick={() => handleDriveFolder(j._id)} title="Open CV folder in Drive" disabled={loadingFolder === j._id} className="text-gray-400 hover:text-blue-600 p-1 disabled:opacity-50">
+                      {loadingFolder === j._id ? <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent" /> : <HiFolderOpen />}
+                    </button>
                     <button onClick={() => handleExport(j._id)} title="Export applications" className="text-gray-400 hover:text-green-600 p-1"><HiDownload /></button>
                     <button onClick={() => toggleClose(j)} title={j.is_closed ? 'Reopen' : 'Close'} className={`p-1 ${j.is_closed ? 'text-green-500 hover:text-green-700' : 'text-amber-500 hover:text-amber-700'}`}>
                       {j.is_closed ? <HiLockOpen /> : <HiLockClosed />}
