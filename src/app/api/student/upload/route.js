@@ -45,20 +45,19 @@ export async function POST(request) {
     }
 
     if (jobId) {
-      // Per-job CV upload — must have an existing bid
-      const bid = await Bid.findOne({ user_id: decoded.id, job_id: jobId });
-      if (!bid) {
-        return NextResponse.json({ error: 'You must bid on this position before uploading a resume.' }, { status: 400 });
-      }
-
+      // Per-job CV upload — upload before or after bidding
       const job = await Job.findById(jobId).populate('company_id', 'name');
       if (!job) return NextResponse.json({ error: 'Job not found' }, { status: 404 });
 
       const { fileId, webViewLink } = await uploadCVToDrive(buffer, user.registration_no, user.full_name, job.company_id.name, job.title);
 
-      bid.cv_drive_id = fileId;
-      bid.cv_url = webViewLink;
-      await bid.save();
+      // If a bid already exists, attach the CV to it
+      const bid = await Bid.findOne({ user_id: decoded.id, job_id: jobId });
+      if (bid) {
+        bid.cv_drive_id = fileId;
+        bid.cv_url = webViewLink;
+        await bid.save();
+      }
 
       return NextResponse.json({
         message: 'Resume uploaded successfully',

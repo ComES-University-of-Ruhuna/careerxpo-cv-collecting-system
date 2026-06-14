@@ -10,6 +10,8 @@ export default function CompaniesPage() {
   const { token, user, updateUser } = useAuth();
   const [companies, setCompanies] = useState([]);
   const [myBids, setMyBids] = useState({});
+  // Track uploaded CVs per job (before bidding)
+  const [uploadedCVs, setUploadedCVs] = useState({});
   const [loading, setLoading] = useState(true);
   const [bidding, setBidding] = useState(null);
   const [uploading, setUploading] = useState(null);
@@ -42,12 +44,18 @@ export default function CompaniesPage() {
       return;
     }
 
+    const cvInfo = uploadedCVs[jobId];
+    if (!cvInfo) {
+      toast.error('Please upload your CV for this position first.');
+      return;
+    }
+
     setBidding(jobId);
     try {
       const res = await fetch('/api/student/bids', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ job_id: jobId }),
+        body: JSON.stringify({ job_id: jobId, cv_drive_id: cvInfo.cv_drive_id, cv_url: cvInfo.cv_url }),
       });
       const data = await res.json();
 
@@ -57,7 +65,12 @@ export default function CompaniesPage() {
       }
 
       toast.success('Bid placed successfully!');
-      setMyBids((prev) => ({ ...prev, [jobId]: { cv_url: null, cv_drive_id: null } }));
+      setMyBids((prev) => ({ ...prev, [jobId]: { cv_url: cvInfo.cv_url, cv_drive_id: cvInfo.cv_drive_id } }));
+      setUploadedCVs((prev) => {
+        const next = { ...prev };
+        delete next[jobId];
+        return next;
+      });
       updateUser({ remaining_credits: data.remaining_credits });
     } catch {
       toast.error('Failed to place bid');
@@ -98,10 +111,20 @@ export default function CompaniesPage() {
       }
 
       toast.success('Resume uploaded!');
-      setMyBids((prev) => ({
-        ...prev,
-        [jobId]: { cv_url: data.cv_url, cv_drive_id: data.cv_drive_id },
-      }));
+
+      if (myBids[jobId]) {
+        // Already bid — update the bid's CV info
+        setMyBids((prev) => ({
+          ...prev,
+          [jobId]: { cv_url: data.cv_url, cv_drive_id: data.cv_drive_id },
+        }));
+      } else {
+        // Not yet bid — store CV info so bid button appears
+        setUploadedCVs((prev) => ({
+          ...prev,
+          [jobId]: { cv_url: data.cv_url, cv_drive_id: data.cv_drive_id },
+        }));
+      }
     } catch {
       toast.error('Upload failed');
     } finally {
@@ -132,16 +155,6 @@ export default function CompaniesPage() {
           <p className="text-amber-800 font-medium">Complete your profile to start bidding</p>
           <p className="text-sm text-amber-700 mt-1">
             You need to add your registration number, full name, department, and accept the data sharing consent before you can bid on positions.
-          </p>
-          <a href="/student/profile" className="inline-block mt-2 text-sm font-medium text-primary-600 hover:underline">Go to My Profile →</a>
-        </div>
-      )}
-
-      {user?.profile_completed && !user?.cv_url && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
-          <p className="text-amber-800 font-medium">Upload your CV to start bidding</p>
-          <p className="text-sm text-amber-700 mt-1">
-            You must upload your CV (PDF) before you can bid on any position.
           </p>
           <a href="/student/profile" className="inline-block mt-2 text-sm font-medium text-primary-600 hover:underline">Go to My Profile →</a>
         </div>
@@ -180,11 +193,12 @@ export default function CompaniesPage() {
                     {company.jobs.map((job) => {
                       const bidInfo = myBids[job._id];
                       const hasBid = !!bidInfo;
+                      const cvUploaded = !!uploadedCVs[job._id];
                       const isFull = job.max_applicants && job.current_applicants >= job.max_applicants && !hasBid;
                       const isClosed = job.is_closed || (job.deadline && new Date(job.deadline) < new Date());
                       const needsProfile = !user?.profile_completed;
-                      const needsCV = !user?.cv_url;
-                      const cantBid = isClosed || isFull || needsProfile || needsCV;
+                      const isUploading = uploading === job._id;
+                      const cantBid = isClosed || isFull || needsProfile;
                       return (
                         <div key={job._id} className={`bg-gray-50 rounded-lg p-4 ${isClosed && !hasBid ? 'opacity-60' : ''}`}>
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
@@ -212,21 +226,41 @@ export default function CompaniesPage() {
                               <span className="text-xs font-medium text-gray-500">
                                 <HiCurrencyDollar className="inline" /> {job.credit_cost} credits
                               </span>
-                              <button
-                                onClick={() => handleBid(job._id, job.credit_cost)}
-                                disabled={hasBid || bidding === job._id || cantBid}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-                                  hasBid
-                                    ? 'bg-green-100 text-green-700 cursor-default'
-                                    : cantBid
-                                    ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                                    : 'bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50'
-                                }`}
-                              >
-                                {hasBid ? (
-                                  <span className="flex items-center gap-1"><HiCheck /> Applied</span>
-                                ) : isClosed ? 'Closed' : isFull ? 'Full' : needsProfile ? 'Complete Profile' : needsCV ? 'Upload CV' : bidding === job._id ? 'Bidding...' : 'Bid / Apply'}
-                              </button>
+
+                              {/* Flow: Applied → Bid → Uploading → Upload CV */}
+                              {hasBid ? (
+                                <span className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-green-100 text-green-700">
+                                  <HiCheck /> Applied
+                                </span>
+                              ) : isUploading ? (
+                                <span className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 text-gray-600">
+                                  <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-primary-600 border-t-transparent" />
+                                  Uploading...
+                                </span>
+                              ) : cvUploaded ? (
+                                <button
+                                  onClick={() => handleBid(job._id, job.credit_cost)}
+                                  disabled={bidding === job._id || cantBid}
+                                  className="px-3 py-1.5 rounded-lg text-xs font-medium transition bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50"
+                                >
+                                  {bidding === job._id ? 'Bidding...' : 'Bid / Apply'}
+                                </button>
+                              ) : cantBid ? (
+                                <span className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-200 text-gray-500 cursor-not-allowed">
+                                  {isClosed ? 'Closed' : isFull ? 'Full' : 'Complete Profile'}
+                                </span>
+                              ) : (
+                                <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-medium text-xs">
+                                  <HiUpload />
+                                  Upload CV
+                                  <input
+                                    type="file"
+                                    accept=".pdf,application/pdf"
+                                    onChange={(e) => handleJobCV(e, job._id)}
+                                    className="hidden"
+                                  />
+                                </label>
+                              )}
                             </div>
                           </div>
                           {job.description && (
@@ -234,32 +268,32 @@ export default function CompaniesPage() {
                               <ReactMarkdown>{job.description}</ReactMarkdown>
                             </div>
                           )}
-                          {hasBid && (
+
+                          {/* Show CV info after upload (before or after bid) */}
+                          {(cvUploaded || (hasBid && bidInfo.cv_url)) && (
                             <div className="mt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-gray-200">
                               <div className="flex items-center gap-2 text-sm">
                                 <HiDocumentText className="text-gray-400" />
-                                {bidInfo.cv_url ? (
-                                  <span className="text-green-700 font-medium">
-                                    Resume uploaded ✓{' '}
-                                    <a href={bidInfo.cv_url} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline">
-                                      View →
-                                    </a>
-                                  </span>
-                                ) : (
-                                  <span className="text-amber-700 text-xs">No resume uploaded for this position</span>
-                                )}
+                                <span className="text-green-700 font-medium">
+                                  Resume uploaded ✓{' '}
+                                  <a href={(uploadedCVs[job._id] || bidInfo)?.cv_url} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline">
+                                    View →
+                                  </a>
+                                </span>
                               </div>
-                              <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-medium text-xs">
-                                <HiUpload />
-                                {uploading === job._id ? 'Uploading...' : bidInfo.cv_url ? 'Re-upload' : 'Upload Resume'}
-                                <input
-                                  type="file"
-                                  accept=".pdf,application/pdf"
-                                  onChange={(e) => handleJobCV(e, job._id)}
-                                  disabled={uploading === job._id}
-                                  className="hidden"
-                                />
-                              </label>
+                              {hasBid && (
+                                <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-medium text-xs">
+                                  <HiUpload />
+                                  {uploading === job._id ? 'Uploading...' : 'Re-upload'}
+                                  <input
+                                    type="file"
+                                    accept=".pdf,application/pdf"
+                                    onChange={(e) => handleJobCV(e, job._id)}
+                                    disabled={uploading === job._id}
+                                    className="hidden"
+                                  />
+                                </label>
+                              )}
                             </div>
                           )}
                         </div>

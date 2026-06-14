@@ -34,7 +34,7 @@ export async function POST(request) {
     if (!decoded) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     await dbConnect();
-    const { job_id } = await request.json();
+    const { job_id, cv_drive_id, cv_url } = await request.json();
 
     // Check profile completion
     const user = await User.findById(decoded.id);
@@ -44,8 +44,8 @@ export async function POST(request) {
     if (!user.profile_completed) {
       return NextResponse.json({ error: 'Please complete your profile before bidding. Go to My Profile to add your registration number, name, department, and accept the data sharing consent.' }, { status: 403 });
     }
-    if (!user.cv_url) {
-      return NextResponse.json({ error: 'Please upload your CV before bidding. Go to My Profile to upload your CV.' }, { status: 403 });
+    if (!cv_drive_id || !cv_url) {
+      return NextResponse.json({ error: 'Please upload your CV for this position before bidding.' }, { status: 400 });
     }
 
     if (!job_id || !isValidObjectId(job_id)) {
@@ -112,6 +112,8 @@ export async function POST(request) {
         user_id: decoded.id,
         job_id,
         credits_spent: job.credit_cost,
+        cv_drive_id: cv_drive_id || null,
+        cv_url: cv_url || null,
       });
     } catch (bidError) {
       // Duplicate key error (race condition) — refund credits and slot
