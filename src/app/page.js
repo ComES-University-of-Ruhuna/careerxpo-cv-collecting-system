@@ -139,6 +139,8 @@ export default function HomePage() {
               <Link href="/privacy" className="text-primary-200 hover:text-white hover:underline">Privacy Policy</Link>
               {' · '}
               <Link href="/terms" className="text-primary-200 hover:text-white hover:underline">Terms of Service</Link>
+              {' · '}
+              <Link href="https://www.linkedin.com/in/kavishkakalhara/" className="text-primary-600 hover:underline">Developer</Link>
             </p>
           </div>
         </div>
