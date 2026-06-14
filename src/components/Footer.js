@@ -10,6 +10,8 @@ export default function Footer() {
         <Link href="/privacy" className="text-primary-600 hover:underline">Privacy Policy</Link>
         {' · '}
         <Link href="/terms" className="text-primary-600 hover:underline">Terms of Service</Link>
+        {' · '}
+        <Link href="https://www.linkedin.com/in/kavishkakalhara/" className="text-primary-600 hover:underline">Developer</Link>
       </p>
     </footer>
   );
