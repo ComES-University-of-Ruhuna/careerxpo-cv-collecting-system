@@ -6,11 +6,12 @@ import Sidebar from '@/components/Sidebar';
 import Footer from '@/components/Footer';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { HiHome, HiOfficeBuilding, HiUser } from 'react-icons/hi';
+import { HiHome, HiOfficeBuilding, HiUser, HiGlobeAlt } from 'react-icons/hi';
 
 const studentLinks = [
   { href: '/student', label: 'Dashboard', icon: <HiHome /> },
   { href: '/student/companies', label: 'Companies & Bid', icon: <HiOfficeBuilding /> },
+  { href: '/student/linkedin-jobs', label: 'LinkedIn Jobs', icon: <HiGlobeAlt /> },
   { href: '/student/profile', label: 'My Profile', icon: <HiUser /> },
 ];
 
