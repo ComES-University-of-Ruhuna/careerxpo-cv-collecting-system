@@ -125,7 +125,7 @@ export async function sendJobAlertEmails({ recipients, jobTitle, companyName, cr
           </table>
         </div>
         <div style="text-align: center; margin: 24px 0;">
-          <a href="${process.env.NEXT_PUBLIC_BASE_URL || 'https://careerxpo.com'}/student/companies" style="display: inline-block; background: #1e40af; color: white; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: bold;">
+          <a href="${process.env.NEXT_PUBLIC_BASE_URL || 'https://careerxpo.comesuor.lk'}/student/companies" style="display: inline-block; background: #1e40af; color: white; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: bold;">
             View & Apply Now
           </a>
         </div>
