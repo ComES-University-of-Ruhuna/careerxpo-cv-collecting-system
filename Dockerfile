@@ -1,6 +1,8 @@
-FROM node:18-alpine AS base
+FROM node:22-alpine AS base
 
 WORKDIR /app
+
+RUN npm install -g npm@11
 
 COPY package.json package-lock.json ./
 RUN npm ci
@@ -16,11 +18,12 @@ FROM base AS builder
 ENV NODE_ENV=production
 RUN npm run build
 
-FROM node:18-alpine AS production
+FROM node:22-alpine AS production
 WORKDIR /app
 ENV NODE_ENV=production
 
 RUN apk add --no-cache libc6-compat
+RUN npm install -g npm@11
 RUN npm install --no-save sharp
 
 COPY --from=builder /app/.next/standalone ./

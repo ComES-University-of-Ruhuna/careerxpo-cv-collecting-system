@@ -6,6 +6,7 @@ import Company from '@/models/Company';
 import { requireAdmin, isValidObjectId } from '@/lib/auth';
 import { logActivity } from '@/lib/activity-log';
 import { sendJobAlertEmails } from '@/lib/email';
+import { invalidateCompanyCaches } from '@/lib/cache';
 
 export async function GET(request) {
   try {
@@ -67,6 +68,7 @@ export async function POST(request) {
       departments: departments || [],
     });
     await logActivity(admin.id, 'job_created', 'job', job._id, `Created job "${title}"`);
+    await invalidateCompanyCaches();
 
     // Send email alerts to students in relevant departments (non-blocking)
     try {

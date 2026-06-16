@@ -3,6 +3,7 @@ import dbConnect from '@/lib/db';
 import Company from '@/models/Company';
 import { requireAdmin, isValidObjectId } from '@/lib/auth';
 import { logActivity } from '@/lib/activity-log';
+import { invalidateCompanyCaches } from '@/lib/cache';
 
 function isValidUrl(str) {
   if (!str) return true;
@@ -52,6 +53,7 @@ export async function POST(request) {
 
     const company = await Company.create({ name: name.trim(), logo: logo || '', website: website || '' });
     await logActivity(admin.id, 'company_created', 'company', company._id, `Created company "${name}"`);
+    await invalidateCompanyCaches();
     return NextResponse.json({ company }, { status: 201 });
   } catch (error) {
     if (error.message === 'Unauthorized') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

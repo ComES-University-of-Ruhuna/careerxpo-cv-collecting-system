@@ -9,7 +9,7 @@ const PHONE_REGEX = /^[+\d][\d\s\-()]{6,19}$/;
 export async function POST(request) {
   try {
     const ip = getClientIp(request);
-    const { allowed } = rateLimit(`guest-post:${ip}`, 5, 15 * 60 * 1000);
+    const { allowed } = await rateLimit(`guest-post:${ip}`, 5, 15 * 60 * 1000);
     if (!allowed) {
       return NextResponse.json({ error: 'Too many submissions. Please try again later.' }, { status: 429 });
     }

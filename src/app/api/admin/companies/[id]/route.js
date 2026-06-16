@@ -5,6 +5,7 @@ import Job from '@/models/Job';
 import Bid from '@/models/Bid';
 import { requireAdmin, isValidObjectId } from '@/lib/auth';
 import { logActivity } from '@/lib/activity-log';
+import { invalidateCompanyCaches } from '@/lib/cache';
 
 export async function GET(request, { params }) {
   try {
@@ -34,6 +35,7 @@ export async function PUT(request, { params }) {
 
     if (!company) return NextResponse.json({ error: 'Company not found' }, { status: 404 });
     await logActivity(admin.id, 'company_updated', 'company', params.id, `Updated company "${company.name}"`);
+    await invalidateCompanyCaches();
     return NextResponse.json({ company });
   } catch (error) {
     if (error.message === 'Unauthorized') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -59,6 +61,7 @@ export async function DELETE(request, { params }) {
     }
 
     await logActivity(admin.id, 'company_deleted', 'company', params.id, `Deleted company "${company.name}"`);
+    await invalidateCompanyCaches();
     return NextResponse.json({ message: 'Company deleted' });
   } catch (error) {
     if (error.message === 'Unauthorized') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

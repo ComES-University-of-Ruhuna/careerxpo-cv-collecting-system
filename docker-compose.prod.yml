@@ -8,8 +8,27 @@ services:
       - .env.local
     environment:
       - NODE_ENV=production
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
     restart: always
 
   mongo:
     ports: []
     restart: always
+
+  redis:
+    image: redis:7-alpine
+    ports: []
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+
+volumes:
+  redis_data:

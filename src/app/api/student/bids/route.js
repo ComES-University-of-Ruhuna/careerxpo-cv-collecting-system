@@ -6,6 +6,7 @@ import Bid from '@/models/Bid';
 import Company from '@/models/Company';
 import { authenticate, isValidObjectId } from '@/lib/auth';
 import { sendBidConfirmationEmail } from '@/lib/email';
+import { invalidateStatsCache } from '@/lib/cache';
 
 export async function GET(request) {
   try {
@@ -152,6 +153,8 @@ export async function POST(request) {
     } catch (emailErr) {
       console.error('Email setup error:', emailErr);
     }
+
+    invalidateStatsCache().catch(() => {});
 
     return NextResponse.json({
       message: 'Bid placed successfully',

@@ -9,7 +9,7 @@ import { normalizeRegNo } from '@/lib/validation';
 export async function POST(request) {
   try {
     const ip = getClientIp(request);
-    const { allowed, remaining } = rateLimit(`login:${ip}`, 10, 15 * 60 * 1000);
+    const { allowed, remaining } = await rateLimit(`login:${ip}`, 10, 15 * 60 * 1000);
     if (!allowed) {
       return NextResponse.json(
         { error: 'Too many login attempts. Please try again later.' },

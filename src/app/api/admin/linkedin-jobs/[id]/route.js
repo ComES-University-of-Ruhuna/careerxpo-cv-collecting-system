@@ -3,6 +3,7 @@ import dbConnect from '@/lib/db';
 import LinkedInJob from '@/models/LinkedInJob';
 import { requireAdmin, isValidObjectId } from '@/lib/auth';
 import { logActivity } from '@/lib/activity-log';
+import { invalidateLinkedInJobCaches } from '@/lib/cache';
 
 export async function PUT(request, { params }) {
   try {
@@ -41,6 +42,7 @@ export async function PUT(request, { params }) {
     if (!job) return NextResponse.json({ error: 'LinkedIn job not found' }, { status: 404 });
 
     await logActivity(admin.id, 'linkedin_job_updated', 'linkedin_job', id, `Updated LinkedIn job "${job.title}"`);
+    await invalidateLinkedInJobCaches();
     return NextResponse.json({ job });
   } catch (error) {
     if (error.message === 'Unauthorized') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -60,6 +62,7 @@ export async function DELETE(request, { params }) {
     if (!job) return NextResponse.json({ error: 'LinkedIn job not found' }, { status: 404 });
 
     await logActivity(admin.id, 'linkedin_job_deleted', 'linkedin_job', id, `Deleted LinkedIn job "${job.title}"`);
+    await invalidateLinkedInJobCaches();
     return NextResponse.json({ message: 'LinkedIn job deleted' });
   } catch (error) {
     if (error.message === 'Unauthorized') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

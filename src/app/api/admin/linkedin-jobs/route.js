@@ -3,6 +3,7 @@ import dbConnect from '@/lib/db';
 import LinkedInJob from '@/models/LinkedInJob';
 import { requireAdmin } from '@/lib/auth';
 import { logActivity } from '@/lib/activity-log';
+import { invalidateLinkedInJobCaches } from '@/lib/cache';
 
 export async function GET(request) {
   try {
@@ -67,6 +68,7 @@ export async function POST(request) {
     });
 
     await logActivity(admin.id, 'linkedin_job_created', 'linkedin_job', job._id, `Published LinkedIn job "${title}"`);
+    await invalidateLinkedInJobCaches();
     return NextResponse.json({ job }, { status: 201 });
   } catch (error) {
     if (error.message === 'Unauthorized') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

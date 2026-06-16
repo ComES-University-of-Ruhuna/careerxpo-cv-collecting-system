@@ -3,6 +3,7 @@ import dbConnect from '@/lib/db';
 import Job from '@/models/Job';
 import { requireAdmin, isValidObjectId } from '@/lib/auth';
 import { logActivity } from '@/lib/activity-log';
+import { invalidateCompanyCaches } from '@/lib/cache';
 
 export async function GET(request, { params }) {
   try {
@@ -61,6 +62,7 @@ export async function PUT(request, { params }) {
 
     if (!job) return NextResponse.json({ error: 'Job not found' }, { status: 404 });
     await logActivity(admin.id, 'job_updated', 'job', params.id, `Updated job "${job.title}"`);
+    await invalidateCompanyCaches();
     return NextResponse.json({ job });
   } catch (error) {
     if (error.message === 'Unauthorized') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -77,6 +79,7 @@ export async function DELETE(request, { params }) {
     const job = await Job.findByIdAndDelete(params.id);
     if (!job) return NextResponse.json({ error: 'Job not found' }, { status: 404 });
     await logActivity(admin.id, 'job_deleted', 'job', params.id, `Deleted job "${job.title}"`);
+    await invalidateCompanyCaches();
     return NextResponse.json({ message: 'Job deleted' });
   } catch (error) {
     if (error.message === 'Unauthorized') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
