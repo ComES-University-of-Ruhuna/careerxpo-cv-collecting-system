@@ -228,7 +228,7 @@ export default function ProfilePage() {
 
         <button
           type="submit"
-          disabled={saving || !isDirty}
+          disabled={saving || !isDirty || !form.cv_consent}
           className="flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm"
         >
           <HiCheck />
