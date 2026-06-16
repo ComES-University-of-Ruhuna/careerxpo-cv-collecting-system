@@ -2,20 +2,25 @@
 
 import { useAuth } from '@/components/AuthProvider';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { HiUpload, HiDocumentText, HiPencil, HiCheck } from 'react-icons/hi';
 
 export default function ProfilePage() {
   const { user, token, updateUser } = useAuth();
+  const router = useRouter();
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({
+  const initialForm = {
     registration_no: '',
     full_name: '',
     linkedin: '',
     department: '',
     cv_consent: false,
-  });
+  };
+  const [form, setForm] = useState(initialForm);
+  const [savedForm, setSavedForm] = useState(initialForm);
+  const isDirty = JSON.stringify(form) !== JSON.stringify(savedForm);
 
   const departments = [
     { value: 'DEIE', label: 'DEIE - Electrical & Information Engineering' },
@@ -27,13 +32,15 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (user) {
-      setForm({
+      const next = {
         registration_no: user.registration_no || '',
         full_name: user.full_name || '',
         linkedin: user.linkedin || '',
         department: user.department || '',
         cv_consent: user.cv_consent || false,
-      });
+      };
+      setForm(next);
+      setSavedForm(next);
     }
   }, [user]);
 
@@ -56,6 +63,12 @@ export default function ProfilePage() {
 
       toast.success('Profile updated successfully!');
       updateUser(data.user);
+      setSavedForm(form);
+
+      const justActivated = !user?.profile_completed && data.user?.profile_completed;
+      if (justActivated) {
+        router.push('/student');
+      }
     } catch {
       toast.error('Failed to update profile');
     } finally {
@@ -215,8 +228,8 @@ export default function ProfilePage() {
 
         <button
           type="submit"
-          disabled={saving}
-          className="flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50 text-sm"
+          disabled={saving || !isDirty}
+          className="flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm"
         >
           <HiCheck />
           {saving ? 'Saving...' : 'Save Profile'}
