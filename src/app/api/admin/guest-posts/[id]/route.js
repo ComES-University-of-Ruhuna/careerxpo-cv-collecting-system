@@ -3,12 +3,12 @@ import dbConnect from '@/lib/db';
 import GuestPost from '@/models/GuestPost';
 import Company from '@/models/Company';
 import Job from '@/models/Job';
-import { requireAdmin, isValidObjectId } from '@/lib/auth';
+import { requirePermission, isValidObjectId, ADMIN_PERMISSIONS } from '@/lib/auth';
 import { logActivity } from '@/lib/activity-log';
 
 export async function GET(request, { params }) {
   try {
-    requireAdmin(request);
+    await requirePermission(request, ADMIN_PERMISSIONS.GUEST_POSTS);
     const { id } = params;
     if (!isValidObjectId(id)) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
 
@@ -26,7 +26,7 @@ export async function GET(request, { params }) {
 
 export async function PUT(request, { params }) {
   try {
-    const admin = requireAdmin(request);
+    const admin = await requirePermission(request, ADMIN_PERMISSIONS.GUEST_POSTS);
     const { id } = params;
     if (!isValidObjectId(id)) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
 
@@ -103,7 +103,7 @@ export async function PUT(request, { params }) {
 
 export async function DELETE(request, { params }) {
   try {
-    requireAdmin(request);
+    await requirePermission(request, ADMIN_PERMISSIONS.GUEST_POSTS);
     const { id } = params;
     if (!isValidObjectId(id)) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
 

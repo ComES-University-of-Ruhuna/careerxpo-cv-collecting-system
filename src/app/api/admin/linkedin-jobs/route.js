@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import LinkedInJob from '@/models/LinkedInJob';
-import { requireAdmin } from '@/lib/auth';
+import { requirePermission, ADMIN_PERMISSIONS } from '@/lib/auth';
 import { logActivity } from '@/lib/activity-log';
 import { invalidateLinkedInJobCaches } from '@/lib/cache';
 
 export async function GET(request) {
   try {
-    requireAdmin(request);
+    await requirePermission(request, ADMIN_PERMISSIONS.LINKEDIN_JOBS);
     await dbConnect();
     const jobs = await LinkedInJob.find().sort({ created_at: -1 });
     return NextResponse.json({ jobs });
@@ -20,7 +20,7 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
-    const admin = requireAdmin(request);
+    const admin = await requirePermission(request, ADMIN_PERMISSIONS.LINKEDIN_JOBS);
     await dbConnect();
 
     const { title, company_name, linkedin_url, description, location } = await request.json();

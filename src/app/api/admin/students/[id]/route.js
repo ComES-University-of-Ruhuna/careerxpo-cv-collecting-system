@@ -3,13 +3,13 @@ import dbConnect from '@/lib/db';
 import User from '@/models/User';
 import Bid from '@/models/Bid';
 import Job from '@/models/Job';
-import { requireAdmin, isValidObjectId } from '@/lib/auth';
+import { requirePermission, isValidObjectId, ADMIN_PERMISSIONS } from '@/lib/auth';
 import { logActivity } from '@/lib/activity-log';
 
 export async function GET(request, { params }) {
   try {
     if (!isValidObjectId(params.id)) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
-    requireAdmin(request);
+    await requirePermission(request, ADMIN_PERMISSIONS.STUDENTS);
     await dbConnect();
 
     const user = await User.findById(params.id).select('-password_hash');
@@ -36,7 +36,7 @@ export async function GET(request, { params }) {
 // Reset bids — delete all bids and refund credits
 export async function PUT(request, { params }) {
   try {
-    const admin = requireAdmin(request);
+    const admin = await requirePermission(request, ADMIN_PERMISSIONS.STUDENTS);
     await dbConnect();
 
     const user = await User.findById(params.id);
@@ -77,7 +77,7 @@ export async function PUT(request, { params }) {
 // Delete student account
 export async function DELETE(request, { params }) {
   try {
-    const admin = requireAdmin(request);
+    const admin = await requirePermission(request, ADMIN_PERMISSIONS.STUDENTS);
     await dbConnect();
 
     const user = await User.findById(params.id);

@@ -3,12 +3,12 @@ import * as XLSX from 'xlsx';
 import dbConnect from '@/lib/db';
 import Job from '@/models/Job';
 import Bid from '@/models/Bid';
-import { requireAdmin, isValidObjectId } from '@/lib/auth';
+import { requirePermission, isValidObjectId, ADMIN_PERMISSIONS } from '@/lib/auth';
 
 export async function GET(request, { params }) {
   try {
     if (!isValidObjectId(params.id)) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
-    requireAdmin(request);
+    await requirePermission(request, ADMIN_PERMISSIONS.JOBS);
     await dbConnect();
 
     const job = await Job.findById(params.id).populate('company_id', 'name');

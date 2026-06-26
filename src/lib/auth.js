@@ -1,6 +1,18 @@
 import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
 
+export const ADMIN_PERMISSIONS = Object.freeze({
+  DASHBOARD: 'dashboard',
+  COMPANIES: 'companies',
+  JOBS: 'jobs',
+  LINKEDIN_JOBS: 'linkedin-jobs',
+  GUEST_POSTS: 'guest-posts',
+  STUDENTS: 'students',
+  LOGS: 'logs',
+});
+
+export const ADMIN_PERMISSION_LIST = Object.values(ADMIN_PERMISSIONS);
+
 function getJwtSecret() {
   const secret = process.env.JWT_SECRET;
   if (!secret) throw new Error('JWT_SECRET is not configured');
@@ -56,4 +68,27 @@ export function requireAdmin(request) {
     throw new Error('Forbidden');
   }
   return user;
+}
+
+// Allows super-admin (role === 'admin') OR a sub-admin (student whose
+// admin_permissions array contains the required permission key).
+// DB lookup is required because permissions can change without a re-login.
+// Model and DB are imported lazily so this module stays usable in unit tests
+// that mock mongoose without loading models.
+export async function requirePermission(request, permission) {
+  const decoded = requireAuth(request);
+  if (decoded.role === 'admin') return decoded;
+
+  const [{ default: dbConnect }, { default: User }] = await Promise.all([
+    import('@/lib/db'),
+    import('@/models/User'),
+  ]);
+  await dbConnect();
+  const user = await User.findById(decoded.id).select('role admin_permissions');
+  if (!user) throw new Error('Unauthorized');
+  if (user.role === 'admin') return decoded;
+  if (Array.isArray(user.admin_permissions) && user.admin_permissions.includes(permission)) {
+    return decoded;
+  }
+  throw new Error('Forbidden');
 }

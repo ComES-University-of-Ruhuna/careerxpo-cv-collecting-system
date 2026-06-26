@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import Job from '@/models/Job';
-import { requireAdmin, isValidObjectId } from '@/lib/auth';
+import { requirePermission, isValidObjectId, ADMIN_PERMISSIONS } from '@/lib/auth';
 import { logActivity } from '@/lib/activity-log';
 import { invalidateCompanyCaches } from '@/lib/cache';
 
@@ -20,7 +20,7 @@ export async function GET(request, { params }) {
 export async function PUT(request, { params }) {
   try {
     if (!isValidObjectId(params.id)) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
-    const admin = requireAdmin(request);
+    const admin = await requirePermission(request, ADMIN_PERMISSIONS.JOBS);
     await dbConnect();
 
     const { title, description, company_id, credit_cost, departments, max_applicants, deadline, is_closed } = await request.json();
@@ -73,7 +73,7 @@ export async function PUT(request, { params }) {
 
 export async function DELETE(request, { params }) {
   try {
-    const admin = requireAdmin(request);
+    const admin = await requirePermission(request, ADMIN_PERMISSIONS.JOBS);
     await dbConnect();
 
     const job = await Job.findByIdAndDelete(params.id);

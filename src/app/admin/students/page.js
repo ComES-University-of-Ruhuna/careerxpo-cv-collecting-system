@@ -1,18 +1,31 @@
 'use client';
 
 import { useAuth } from '@/components/AuthProvider';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { HiSearch, HiRefresh, HiTrash, HiEye, HiX } from 'react-icons/hi';
+import { HiSearch, HiRefresh, HiTrash, HiEye, HiX, HiShieldCheck } from 'react-icons/hi';
+
+const PERMISSION_OPTIONS = [
+  { key: 'dashboard', label: 'Dashboard', description: 'View stats and platform overview' },
+  { key: 'companies', label: 'Companies', description: 'Manage companies' },
+  { key: 'jobs', label: 'Job Vacancies', description: 'Manage job postings and exports' },
+  { key: 'linkedin-jobs', label: 'LinkedIn Jobs', description: 'Manage LinkedIn job links' },
+  { key: 'guest-posts', label: 'Guest Posts', description: 'Review guest job submissions' },
+  { key: 'students', label: 'Students', description: 'Search and manage student accounts' },
+  { key: 'logs', label: 'Activity Logs', description: 'View admin activity history' },
+];
 
 export default function AdminStudents() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
+  const isSuperAdmin = user?.role === 'admin';
   const [query, setQuery] = useState('');
   const [students, setStudents] = useState([]);
   const [searching, setSearching] = useState(false);
   const [selected, setSelected] = useState(null);
   const [bids, setBids] = useState([]);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const [permDraft, setPermDraft] = useState([]);
+  const [savingPerms, setSavingPerms] = useState(false);
 
   async function handleSearch(e) {
     e?.preventDefault();
@@ -49,10 +62,34 @@ export default function AdminStudents() {
       if (!res.ok) { toast.error(data.error); return; }
       setSelected(data.student);
       setBids(data.bids || []);
+      setPermDraft(Array.isArray(data.student?.admin_permissions) ? [...data.student.admin_permissions] : []);
     } catch {
       toast.error('Failed to load student');
     } finally {
       setLoadingDetail(false);
+    }
+  }
+
+  function togglePerm(key) {
+    setPermDraft((prev) => (prev.includes(key) ? prev.filter((p) => p !== key) : [...prev, key]));
+  }
+
+  async function savePermissions(id) {
+    setSavingPerms(true);
+    try {
+      const res = await fetch(`/api/admin/students/${id}/permissions`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ permissions: permDraft }),
+      });
+      const data = await res.json();
+      if (!res.ok) { toast.error(data.error || 'Failed to save'); return; }
+      toast.success('Permissions updated');
+      setSelected((prev) => (prev ? { ...prev, admin_permissions: data.admin_permissions } : prev));
+    } catch {
+      toast.error('Failed to save permissions');
+    } finally {
+      setSavingPerms(false);
     }
   }
 
@@ -168,7 +205,7 @@ export default function AdminStudents() {
                       <p className="text-sm text-gray-500">{selected.email}</p>
                     </div>
                   </div>
-                  <button onClick={() => { setSelected(null); setBids([]); }} className="text-gray-400 hover:text-gray-600">
+                  <button onClick={() => { setSelected(null); setBids([]); setPermDraft([]); }} className="text-gray-400 hover:text-gray-600">
                     <HiX />
                   </button>
                 </div>
@@ -246,6 +283,70 @@ export default function AdminStudents() {
                   </div>
                 )}
               </div>
+
+              {/* Admin Permissions (super-admin only) */}
+              {isSuperAdmin && (
+                <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                  <div className="p-4 border-b border-gray-200 flex items-center gap-2">
+                    <HiShieldCheck className="text-primary-600" />
+                    <h3 className="font-semibold text-gray-900">Admin Dashboard Access</h3>
+                  </div>
+                  <div className="p-4 space-y-3">
+                    <p className="text-xs text-gray-500">
+                      Select which admin tabs this student can access. API endpoints for unselected tabs will reject their requests.
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {PERMISSION_OPTIONS.map((opt) => {
+                        const checked = permDraft.includes(opt.key);
+                        return (
+                          <label
+                            key={opt.key}
+                            className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition ${
+                              checked ? 'border-primary-500 bg-primary-50' : 'border-gray-200 hover:bg-gray-50'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => togglePerm(opt.key)}
+                              className="mt-0.5"
+                            />
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">{opt.label}</p>
+                              <p className="text-xs text-gray-500">{opt.description}</p>
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+                    <div className="flex flex-wrap gap-3 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => savePermissions(selected._id)}
+                        disabled={savingPerms}
+                        className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition text-sm font-medium disabled:opacity-50"
+                      >
+                        {savingPerms ? 'Saving...' : 'Save Permissions'}
+                      </button>
+                      {permDraft.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setPermDraft([])}
+                          disabled={savingPerms}
+                          className="px-4 py-2 bg-gray-50 text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-100 transition text-sm font-medium"
+                        >
+                          Clear all
+                        </button>
+                      )}
+                      <p className="text-xs text-gray-400 self-center">
+                        {permDraft.length === 0
+                          ? 'No admin access'
+                          : `${permDraft.length} tab(s) granted`}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

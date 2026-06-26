@@ -3,7 +3,7 @@ import dbConnect from '@/lib/db';
 import Company from '@/models/Company';
 import Job from '@/models/Job';
 import Bid from '@/models/Bid';
-import { requireAdmin, isValidObjectId } from '@/lib/auth';
+import { requirePermission, isValidObjectId, ADMIN_PERMISSIONS } from '@/lib/auth';
 import { logActivity } from '@/lib/activity-log';
 import { invalidateCompanyCaches } from '@/lib/cache';
 
@@ -22,7 +22,7 @@ export async function GET(request, { params }) {
 export async function PUT(request, { params }) {
   try {
     if (!isValidObjectId(params.id)) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
-    const admin = requireAdmin(request);
+    const admin = await requirePermission(request, ADMIN_PERMISSIONS.COMPANIES);
     await dbConnect();
 
     const { name, logo, website } = await request.json();
@@ -47,7 +47,7 @@ export async function PUT(request, { params }) {
 export async function DELETE(request, { params }) {
   try {
     if (!isValidObjectId(params.id)) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
-    const admin = requireAdmin(request);
+    const admin = await requirePermission(request, ADMIN_PERMISSIONS.COMPANIES);
     await dbConnect();
 
     const company = await Company.findByIdAndDelete(params.id);

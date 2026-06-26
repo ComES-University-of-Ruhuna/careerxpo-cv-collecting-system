@@ -2,12 +2,12 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import User from '@/models/User';
 import Bid from '@/models/Bid';
-import { requireAdmin } from '@/lib/auth';
+import { requirePermission, ADMIN_PERMISSIONS } from '@/lib/auth';
 import { cacheGetOrSet, CacheKeys, CacheTTL } from '@/lib/cache';
 
 export async function GET(request) {
   try {
-    requireAdmin(request);
+    await requirePermission(request, ADMIN_PERMISSIONS.DASHBOARD);
 
     const stats = await cacheGetOrSet(
       CacheKeys.adminStats(),

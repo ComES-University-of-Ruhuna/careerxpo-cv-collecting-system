@@ -3,14 +3,14 @@ import dbConnect from '@/lib/db';
 import Job from '@/models/Job';
 import User from '@/models/User';
 import Company from '@/models/Company';
-import { requireAdmin, isValidObjectId } from '@/lib/auth';
+import { requirePermission, isValidObjectId, ADMIN_PERMISSIONS } from '@/lib/auth';
 import { logActivity } from '@/lib/activity-log';
 import { sendJobAlertEmails } from '@/lib/email';
 import { invalidateCompanyCaches } from '@/lib/cache';
 
 export async function GET(request) {
   try {
-    requireAdmin(request);
+    await requirePermission(request, ADMIN_PERMISSIONS.JOBS);
     await dbConnect();
     const { searchParams } = new URL(request.url);
     const companyId = searchParams.get('company_id');
@@ -27,7 +27,7 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
-    const admin = requireAdmin(request);
+    const admin = await requirePermission(request, ADMIN_PERMISSIONS.JOBS);
     await dbConnect();
 
     const { company_id, title, description, credit_cost, departments, max_applicants, deadline } = await request.json();

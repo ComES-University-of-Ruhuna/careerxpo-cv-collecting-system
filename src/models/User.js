@@ -21,6 +21,11 @@ const UserSchema = new mongoose.Schema({
   },
   password_hash: { type: String, default: null },
   role: { type: String, enum: ['student', 'admin'], default: 'student' },
+  admin_permissions: {
+    type: [String],
+    enum: ['dashboard', 'companies', 'jobs', 'linkedin-jobs', 'guest-posts', 'students', 'logs'],
+    default: [],
+  },
   cv_drive_id: { type: String, default: null },
   cv_url: { type: String, default: null },
   remaining_credits: { type: Number, default: 100 },

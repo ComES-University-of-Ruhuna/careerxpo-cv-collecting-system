@@ -2,14 +2,14 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import Job from '@/models/Job';
 import Company from '@/models/Company';
-import { requireAdmin, isValidObjectId } from '@/lib/auth';
+import { requirePermission, isValidObjectId, ADMIN_PERMISSIONS } from '@/lib/auth';
 import { getJobFolderLink } from '@/lib/google-drive';
 
 export async function GET(request, { params }) {
   try {
     const id = (await params).id;
     if (!isValidObjectId(id)) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
-    requireAdmin(request);
+    await requirePermission(request, ADMIN_PERMISSIONS.JOBS);
     await dbConnect();
 
     const job = await Job.findById(id);

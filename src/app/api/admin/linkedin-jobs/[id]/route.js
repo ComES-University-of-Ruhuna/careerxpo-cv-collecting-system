@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import LinkedInJob from '@/models/LinkedInJob';
-import { requireAdmin, isValidObjectId } from '@/lib/auth';
+import { requirePermission, isValidObjectId, ADMIN_PERMISSIONS } from '@/lib/auth';
 import { logActivity } from '@/lib/activity-log';
 import { invalidateLinkedInJobCaches } from '@/lib/cache';
 
@@ -9,7 +9,7 @@ export async function PUT(request, { params }) {
   try {
     const id = (await params).id;
     if (!isValidObjectId(id)) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
-    const admin = requireAdmin(request);
+    const admin = await requirePermission(request, ADMIN_PERMISSIONS.LINKEDIN_JOBS);
     await dbConnect();
 
     const { title, company_name, linkedin_url, description, location, is_active } = await request.json();
@@ -55,7 +55,7 @@ export async function DELETE(request, { params }) {
   try {
     const id = (await params).id;
     if (!isValidObjectId(id)) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
-    const admin = requireAdmin(request);
+    const admin = await requirePermission(request, ADMIN_PERMISSIONS.LINKEDIN_JOBS);
     await dbConnect();
 
     const job = await LinkedInJob.findByIdAndDelete(id);

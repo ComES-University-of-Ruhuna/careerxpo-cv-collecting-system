@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import Company from '@/models/Company';
-import { requireAdmin, isValidObjectId } from '@/lib/auth';
+import { requirePermission, isValidObjectId, ADMIN_PERMISSIONS } from '@/lib/auth';
 import { logActivity } from '@/lib/activity-log';
 import { invalidateCompanyCaches } from '@/lib/cache';
 
@@ -17,7 +17,7 @@ function isValidUrl(str) {
 
 export async function GET(request) {
   try {
-    requireAdmin(request);
+    await requirePermission(request, ADMIN_PERMISSIONS.COMPANIES);
     await dbConnect();
     const companies = await Company.find().sort({ created_at: -1 });
     return NextResponse.json({ companies });
@@ -30,7 +30,7 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
-    const admin = requireAdmin(request);
+    const admin = await requirePermission(request, ADMIN_PERMISSIONS.COMPANIES);
     await dbConnect();
 
     const { name, logo, website } = await request.json();
