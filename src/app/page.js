@@ -132,8 +132,8 @@ export default function HomePage() {
             <Image src={logo} alt="CareerXpo 3.0" height={32} className="h-8 w-auto opacity-80" />
           </div>
           <div className="text-center text-sm text-primary-200 space-y-1">
-            <p>Organized by <span className="font-semibold text-white">IEEE Student Branch, University of Ruhuna</span></p>
-            <p className="text-xs text-primary-300">In collaboration with EIES, CEES, ComES, MMESS &amp; SSMENA</p>
+            <p>Organized by <span className="font-semibold text-white">Faculty of Engineering, University of Ruhuna</span></p>
+            <p className="text-xs text-primary-300">In collaboration with CGU, EIES, CEES, ComES, MMESS, SSMENA &amp; IEEE</p>
             <p className="text-xs">Platform powered by <span className="font-semibold text-primary-100">Computer Engineering Society (ComES)</span></p>
             <p className="text-xs mt-3 pt-3 border-t border-primary-700/50">
               <Link href="/privacy" className="text-primary-200 hover:text-white hover:underline">Privacy Policy</Link>

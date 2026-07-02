@@ -10,7 +10,17 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [creditAmount, setCreditAmount] = useState('');
+  const [creditDepartment, setCreditDepartment] = useState('all');
   const [addingCredits, setAddingCredits] = useState(false);
+
+  const DEPARTMENT_OPTIONS = [
+    { value: 'all', label: 'All Departments' },
+    { value: 'DEIE', label: 'DEIE' },
+    { value: 'DMME', label: 'DMME' },
+    { value: 'COM', label: 'COM' },
+    { value: 'DCEE', label: 'DCEE' },
+    { value: 'DMENA', label: 'DMENA' },
+  ];
 
   useEffect(() => {
     if (!token) return;
@@ -92,8 +102,8 @@ export default function AdminDashboard() {
             <HiCurrencyDollar className="text-amber-600 text-xl" />
           </div>
           <div>
-            <h2 className="font-semibold text-gray-900">Add Credits to All Students</h2>
-            <p className="text-sm text-gray-500">Increase every student&apos;s credit balance by a fixed amount</p>
+            <h2 className="font-semibold text-gray-900">Add Credits to Students</h2>
+            <p className="text-sm text-gray-500">Increase student credit balances by a fixed amount — either for all students or a specific department</p>
           </div>
         </div>
         <form
@@ -101,13 +111,14 @@ export default function AdminDashboard() {
             e.preventDefault();
             const amount = parseInt(creditAmount, 10);
             if (!amount || amount < 1) { toast.error('Enter a valid positive number'); return; }
-            if (!confirm(`Add ${amount} credits to ALL students?`)) return;
+            const scopeLabel = creditDepartment === 'all' ? 'ALL students' : `${creditDepartment} students`;
+            if (!confirm(`Add ${amount} credits to ${scopeLabel}?`)) return;
             setAddingCredits(true);
             try {
               const res = await fetch('/api/admin/credits', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify({ amount }),
+                body: JSON.stringify({ amount, department: creditDepartment }),
               });
               const data = await res.json();
               if (!res.ok) { toast.error(data.error); return; }
@@ -119,8 +130,20 @@ export default function AdminDashboard() {
               setAddingCredits(false);
             }
           }}
-          className="flex items-end gap-3"
+          className="flex flex-col sm:flex-row sm:items-end gap-3"
         >
+          <div className="flex-1 max-w-xs">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+            <select
+              value={creditDepartment}
+              onChange={(e) => setCreditDepartment(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white"
+            >
+              {DEPARTMENT_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
           <div className="flex-1 max-w-xs">
             <label className="block text-sm font-medium text-gray-700 mb-1">Credits to add</label>
             <input
@@ -139,7 +162,11 @@ export default function AdminDashboard() {
             disabled={addingCredits}
             className="px-5 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition font-medium text-sm disabled:opacity-50"
           >
-            {addingCredits ? 'Adding...' : 'Add to All Students'}
+            {addingCredits
+              ? 'Adding...'
+              : creditDepartment === 'all'
+                ? 'Add to All Students'
+                : `Add to ${creditDepartment}`}
           </button>
         </form>
       </div>
