@@ -13,9 +13,37 @@ export default function AdminJobs() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({ company_id: '', title: '', description: '', credit_cost: '10', max_applicants: '', deadline: '', departments: [] });
+  const [creditMethod, setCreditMethod] = useState('manual');
+  const [formula, setFormula] = useState({ base_value: '20', rating: 3, domain_demand: '1.0' });
   const [loadingFolder, setLoadingFolder] = useState(null);
 
   const allDepartments = ['DEIE', 'DMME', 'COM', 'DCEE', 'DMENA'];
+  const domainDemandOptions = [
+    { label: 'Low Demand', value: '0.8' },
+    { label: 'Standard', value: '1.0' },
+    { label: 'High Demand', value: '1.4' },
+  ];
+
+  function computeFormulaCredit({ base, limit, rating, demand }) {
+    const b = parseFloat(base);
+    const L = parseInt(limit, 10);
+    const R = parseInt(rating, 10);
+    const D = parseFloat(demand);
+    if (!Number.isFinite(b) || b <= 0) return null;
+    if (!Number.isFinite(L) || L < 1) return null;
+    if (!Number.isFinite(R) || R < 1 || R > 5) return null;
+    if (!Number.isFinite(D) || D <= 0) return null;
+    const Rm = 1 + 0.2 * (R - 1);
+    const S = 1 + 10 / L;
+    return Math.ceil(b * Rm * D * S);
+  }
+
+  const calculatedCredit = computeFormulaCredit({
+    base: formula.base_value,
+    limit: form.max_applicants,
+    rating: formula.rating,
+    demand: formula.domain_demand,
+  });
 
   useEffect(() => { loadData(); }, [token]);
 
@@ -36,6 +64,8 @@ export default function AdminJobs() {
 
   function openNew() {
     setForm({ company_id: companies[0]?._id || '', title: '', description: '', credit_cost: '10', max_applicants: '', deadline: '', departments: [] });
+    setFormula({ base_value: '20', rating: 3, domain_demand: '1.0' });
+    setCreditMethod('manual');
     setEditing(null);
     setShowForm(true);
   }
@@ -50,6 +80,8 @@ export default function AdminJobs() {
       deadline: job.deadline ? new Date(job.deadline).toISOString().slice(0, 16) : '',
       departments: job.departments || [],
     });
+    setFormula({ base_value: '20', rating: 3, domain_demand: '1.0' });
+    setCreditMethod('manual');
     setEditing(job._id);
     setShowForm(true);
   }
@@ -61,10 +93,23 @@ export default function AdminJobs() {
       return;
     }
 
-    const creditCost = parseInt(form.credit_cost, 10);
-    if (!creditCost || creditCost < 1) {
-      toast.error('Credit cost must be a positive integer');
-      return;
+    let creditCost;
+    if (creditMethod === 'formula') {
+      if (!form.max_applicants) {
+        toast.error('Applicant Limit is required for formula calculation');
+        return;
+      }
+      creditCost = calculatedCredit;
+      if (!creditCost || creditCost < 1) {
+        toast.error('Formula inputs are invalid');
+        return;
+      }
+    } else {
+      creditCost = parseInt(form.credit_cost, 10);
+      if (!creditCost || creditCost < 1) {
+        toast.error('Credit cost must be a positive integer');
+        return;
+      }
     }
 
     const maxApplicants = form.max_applicants ? parseInt(form.max_applicants, 10) : null;
@@ -215,21 +260,114 @@ export default function AdminJobs() {
                 <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required />
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Credit Cost *</label>
-                <input type="number" min="1" value={form.credit_cost} onChange={(e) => setForm({ ...form, credit_cost: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Max Applicants</label>
-                <input type="number" min="1" value={form.max_applicants} onChange={(e) => setForm({ ...form, max_applicants: e.target.value })} placeholder="Unlimited" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" />
-                <p className="text-xs text-gray-400 mt-1">Leave empty for unlimited</p>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Max Applicants{creditMethod === 'formula' ? ' *' : ''}</label>
+                <input type="number" min="1" value={form.max_applicants} onChange={(e) => setForm({ ...form, max_applicants: e.target.value })} placeholder={creditMethod === 'formula' ? 'Required (used as L)' : 'Unlimited'} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required={creditMethod === 'formula'} />
+                <p className="text-xs text-gray-400 mt-1">{creditMethod === 'formula' ? 'Also used as Applicant Limit (L) in the formula' : 'Leave empty for unlimited'}</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Application Deadline</label>
                 <input type="datetime-local" value={form.deadline} onChange={(e) => setForm({ ...form, deadline: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" />
                 <p className="text-xs text-gray-400 mt-1">Leave empty for no deadline</p>
               </div>
+            </div>
+
+            <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                <label className="text-sm font-semibold text-gray-800">Credit Value Generation Method</label>
+                <div role="radiogroup" aria-label="Credit Value Generation Method" className="inline-flex rounded-lg border border-gray-300 bg-white p-1">
+                  {['manual', 'formula'].map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      role="radio"
+                      aria-checked={creditMethod === m}
+                      onClick={() => setCreditMethod(m)}
+                      className={`px-4 py-1.5 text-sm font-medium rounded-md transition capitalize ${
+                        creditMethod === m ? 'bg-primary-600 text-white shadow' : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      {m}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {creditMethod === 'manual' ? (
+                <div className="max-w-xs">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Credit Value *</label>
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={form.credit_cost}
+                    onChange={(e) => setForm({ ...form, credit_cost: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
+                    required
+                  />
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Base Value *</label>
+                      <input
+                        type="number"
+                        min="1"
+                        step="1"
+                        value={formula.base_value}
+                        onChange={(e) => setFormula({ ...formula, base_value: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Domain Demand *</label>
+                      <select
+                        value={formula.domain_demand}
+                        onChange={(e) => setFormula({ ...formula, domain_demand: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white"
+                        required
+                      >
+                        {domainDemandOptions.map((o) => (
+                          <option key={o.value} value={o.value}>{o.label} ({o.value})</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Company Rating (R) *</label>
+                    <div role="radiogroup" aria-label="Company Rating" className="flex gap-2">
+                      {[1, 2, 3, 4, 5].map((r) => (
+                        <button
+                          key={r}
+                          type="button"
+                          role="radio"
+                          aria-checked={formula.rating === r}
+                          onClick={() => setFormula({ ...formula, rating: r })}
+                          className={`flex-1 sm:flex-none min-w-[52px] px-3 py-2 rounded-lg border text-sm font-semibold transition ${
+                            formula.rating === r
+                              ? 'bg-amber-100 border-amber-400 text-amber-700'
+                              : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                          }`}
+                        >
+                          {r}★
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between gap-4 rounded-lg border border-primary-200 bg-primary-50 p-4">
+                    <div>
+                      <div className="text-xs font-medium uppercase tracking-wide text-primary-700">Calculated Credit Value</div>
+                      <div className="text-xs text-primary-600/80 mt-0.5">ceil(Base × Rₘ × Demand × S)</div>
+                    </div>
+                    <div className="text-3xl font-bold text-primary-700">
+                      {calculatedCredit ?? '—'}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Departments</label>
