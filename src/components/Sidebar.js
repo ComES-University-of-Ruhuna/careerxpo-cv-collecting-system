@@ -59,8 +59,8 @@ export default function Sidebar({ links }) {
         </div>
       )}
 
-      {/* Desktop sidebar */}
-      <aside className="w-64 bg-white border-r border-gray-200 min-h-[calc(100vh-4rem)] hidden md:block">
+      {/* Desktop sidebar — sticks below the sticky navbar and scrolls its own overflow */}
+      <aside className="w-64 bg-white border-r border-gray-200 hidden md:block shrink-0 sticky top-14 sm:top-16 self-start h-[calc(100vh-3.5rem)] sm:h-[calc(100vh-4rem)] overflow-y-auto">
         {navContent}
       </aside>
     </>
