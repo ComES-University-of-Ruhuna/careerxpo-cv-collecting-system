@@ -66,22 +66,6 @@ export default function LoginPage() {
               <FcGoogle className="text-xl" />
               Sign in with Google
             </a>
-
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200" />
-              </div>
-              <div className="relative flex justify-center text-xs">
-                <span className="bg-white px-3 text-gray-400">OR</span>
-              </div>
-            </div>
-
-            <Link
-              href="/login/admin"
-              className="w-full flex items-center justify-center px-4 py-2.5 text-sm text-gray-500 hover:text-gray-700 transition"
-            >
-              Admin Login →
-            </Link>
           </div>
 
           <p className="text-center text-xs text-gray-400 mt-6">

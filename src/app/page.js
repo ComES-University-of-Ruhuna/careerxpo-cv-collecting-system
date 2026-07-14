@@ -47,14 +47,9 @@ export default function HomePage() {
                 Go to Dashboard
               </Link>
             ) : (
-              <>
-                <a href="/api/auth/google" className="px-8 py-3 bg-white text-primary-700 rounded-lg font-semibold hover:bg-gray-100 transition text-base md:text-lg shadow-lg">
-                  Sign in with Google
-                </a>
-                <Link href="/login" className="px-8 py-3 border-2 border-white/40 text-white rounded-lg font-semibold hover:bg-white/10 transition text-base md:text-lg">
-                  Admin Login
-                </Link>
-              </>
+              <a href="/api/auth/google" className="px-8 py-3 bg-white text-primary-700 rounded-lg font-semibold hover:bg-gray-100 transition text-base md:text-lg shadow-lg">
+                Sign in with Google
+              </a>
             )}
             <Link href="/guest" className="px-8 py-3 bg-white/10 backdrop-blur border-2 border-white text-white rounded-lg font-semibold hover:bg-white/20 transition text-base md:text-lg">
               Post a Job Vacancy
