@@ -3,7 +3,16 @@
 import { useAuth } from '@/components/AuthProvider';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { HiUserGroup, HiDocumentText, HiChartBar, HiCurrencyDollar } from 'react-icons/hi';
+import {
+  HiUserGroup,
+  HiDocumentText,
+  HiChartBar,
+  HiCurrencyDollar,
+  HiCheckCircle,
+  HiShieldCheck,
+  HiAcademicCap,
+  HiExclamationCircle,
+} from 'react-icons/hi';
 
 export default function AdminDashboard() {
   const { token } = useAuth();
@@ -38,11 +47,35 @@ export default function AdminDashboard() {
     );
   }
 
+  const totalStudents = stats?.total_students ?? 0;
+  const totalCvs = stats?.total_cvs ?? 0;
+  const totalProfileCompleted = stats?.total_profile_completed ?? 0;
+  const totalCvConsent = stats?.total_cv_consent ?? 0;
+  const unassignedDepartment = stats?.unassigned_department ?? 0;
+  const byDepartment = Array.isArray(stats?.by_department) ? stats.by_department : [];
+
+  const pct = (part, total) => {
+    if (!total) return 0;
+    return Math.round((part / total) * 100);
+  };
+
+  // Colour palette per department so charts stay visually distinct.
+  const DEPT_COLORS = {
+    DEIE: { bar: 'bg-blue-500', chip: 'bg-blue-100 text-blue-700', ring: 'ring-blue-200' },
+    DMME: { bar: 'bg-emerald-500', chip: 'bg-emerald-100 text-emerald-700', ring: 'ring-emerald-200' },
+    COM: { bar: 'bg-purple-500', chip: 'bg-purple-100 text-purple-700', ring: 'ring-purple-200' },
+    DCEE: { bar: 'bg-orange-500', chip: 'bg-orange-100 text-orange-700', ring: 'ring-orange-200' },
+    DMENA: { bar: 'bg-cyan-500', chip: 'bg-cyan-100 text-cyan-700', ring: 'ring-cyan-200' },
+  };
+  const fallbackColor = { bar: 'bg-gray-500', chip: 'bg-gray-100 text-gray-700', ring: 'ring-gray-200' };
+  const colorFor = (dept) => DEPT_COLORS[dept] || fallbackColor;
+
   return (
     <div>
       <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6">Admin Dashboard</h1>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5 mb-8">
+      {/* Top-line stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 mb-8">
         <div className="bg-white rounded-xl border border-gray-200 p-5">
           <div className="flex items-center gap-3 mb-2">
             <div className="p-2 bg-primary-100 rounded-lg">
@@ -50,7 +83,7 @@ export default function AdminDashboard() {
             </div>
             <p className="text-sm text-gray-500">Total Students</p>
           </div>
-          <p className="text-3xl font-bold text-gray-900">{stats?.total_students ?? 0}</p>
+          <p className="text-3xl font-bold text-gray-900">{totalStudents}</p>
         </div>
 
         <div className="bg-white rounded-xl border border-gray-200 p-5">
@@ -60,23 +93,184 @@ export default function AdminDashboard() {
             </div>
             <p className="text-sm text-gray-500">CVs Uploaded</p>
           </div>
-          <p className="text-3xl font-bold text-gray-900">{stats?.total_cvs ?? 0}</p>
+          <p className="text-3xl font-bold text-gray-900">{totalCvs}</p>
+          <p className="text-xs text-gray-400 mt-1">{pct(totalCvs, totalStudents)}% of students</p>
         </div>
 
         <div className="bg-white rounded-xl border border-gray-200 p-5">
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <HiChartBar className="text-purple-600 text-xl" />
+            <div className="p-2 bg-teal-100 rounded-lg">
+              <HiCheckCircle className="text-teal-600 text-xl" />
             </div>
-            <p className="text-sm text-gray-500">Companies Tracked</p>
+            <p className="text-sm text-gray-500">Profiles Completed</p>
           </div>
-          <p className="text-3xl font-bold text-gray-900">{stats?.bids_per_job?.length ?? 0}</p>
+          <p className="text-3xl font-bold text-gray-900">{totalProfileCompleted}</p>
+          <p className="text-xs text-gray-400 mt-1">{pct(totalProfileCompleted, totalStudents)}% of students</p>
+        </div>
+
+        <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-indigo-100 rounded-lg">
+              <HiShieldCheck className="text-indigo-600 text-xl" />
+            </div>
+            <p className="text-sm text-gray-500">CV Consent Granted</p>
+          </div>
+          <p className="text-3xl font-bold text-gray-900">{totalCvConsent}</p>
+          <p className="text-xs text-gray-400 mt-1">{pct(totalCvConsent, totalStudents)}% of students</p>
+        </div>
+      </div>
+
+      {/* Student Preferences */}
+      <div className="bg-white rounded-xl border border-gray-200 mb-8">
+        <div className="p-5 border-b border-gray-200 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <div className="p-2 bg-primary-50 rounded-lg">
+              <HiAcademicCap className="text-primary-600 text-lg" />
+            </div>
+            <div>
+              <h2 className="font-semibold text-gray-900">Student Preferences</h2>
+              <p className="text-xs text-gray-500">Distribution by department and sub-specialization</p>
+            </div>
+          </div>
+          {unassignedDepartment > 0 && (
+            <div className="flex items-center gap-1 text-xs text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded-md">
+              <HiExclamationCircle />
+              {unassignedDepartment} student{unassignedDepartment !== 1 ? 's' : ''} without a department
+            </div>
+          )}
+        </div>
+
+        <div className="p-5 space-y-6">
+          {/* Department distribution */}
+          <div>
+            <div className="flex justify-between items-baseline mb-3">
+              <h3 className="text-sm font-semibold text-gray-800">Department distribution</h3>
+              <span className="text-xs text-gray-400">Share of {totalStudents} student{totalStudents !== 1 ? 's' : ''}</span>
+            </div>
+            <div className="space-y-3">
+              {byDepartment.map((d) => {
+                const color = colorFor(d.department);
+                const percent = pct(d.count, totalStudents);
+                return (
+                  <div key={d.department}>
+                    <div className="flex justify-between items-center text-sm mb-1">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className={`px-2 py-0.5 rounded-md text-xs font-medium ${color.chip} shrink-0`}>
+                          {d.department}
+                        </span>
+                        <span className="text-gray-600 truncate">{d.label}</span>
+                      </div>
+                      <span className="text-gray-700 font-medium shrink-0 tabular-nums">
+                        {d.count} <span className="text-gray-400 font-normal">({percent}%)</span>
+                      </span>
+                    </div>
+                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full ${color.bar} transition-all`}
+                        style={{ width: `${percent}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+              {byDepartment.length === 0 && (
+                <p className="text-sm text-gray-500">No student data yet.</p>
+              )}
+            </div>
+          </div>
+
+          {/* Per-department detail cards */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-800 mb-3">Sub-specialization breakdown</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {byDepartment.map((d) => {
+                const color = colorFor(d.department);
+                const deptTotal = d.count;
+                const subs = d.sub_specializations || [];
+                const hasKnownSubs = subs.some((s) => s.sub_specialization !== null);
+                return (
+                  <div
+                    key={d.department}
+                    className="border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className={`px-2 py-0.5 rounded-md text-xs font-semibold ${color.chip} shrink-0`}>
+                          {d.department}
+                        </span>
+                        <p className="text-sm font-medium text-gray-900 truncate">{d.label}</p>
+                      </div>
+                      <span className="text-sm font-semibold text-gray-900 tabular-nums">{deptTotal}</span>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 mb-3 text-xs">
+                      <div className="bg-gray-50 rounded-md p-2 text-center">
+                        <p className="text-gray-500">Profiles</p>
+                        <p className="font-semibold text-gray-900">
+                          {d.profile_completed}
+                          <span className="text-gray-400 font-normal">/{deptTotal}</span>
+                        </p>
+                      </div>
+                      <div className="bg-gray-50 rounded-md p-2 text-center">
+                        <p className="text-gray-500">CVs</p>
+                        <p className="font-semibold text-gray-900">
+                          {d.with_cv}
+                          <span className="text-gray-400 font-normal">/{deptTotal}</span>
+                        </p>
+                      </div>
+                      <div className="bg-gray-50 rounded-md p-2 text-center">
+                        <p className="text-gray-500">Consent</p>
+                        <p className="font-semibold text-gray-900">
+                          {d.cv_consent}
+                          <span className="text-gray-400 font-normal">/{deptTotal}</span>
+                        </p>
+                      </div>
+                    </div>
+
+                    {hasKnownSubs ? (
+                      <div className="space-y-2">
+                        {subs.map((s) => {
+                          const label = s.sub_specialization === null ? 'Not specified' : s.sub_specialization;
+                          const isUnspecified = s.sub_specialization === null;
+                          const percent = pct(s.count, deptTotal);
+                          if (isUnspecified && s.count === 0) return null;
+                          return (
+                            <div key={label}>
+                              <div className="flex justify-between text-xs mb-1">
+                                <span className={isUnspecified ? 'text-gray-400 italic' : 'text-gray-700'}>
+                                  {label}
+                                </span>
+                                <span className="text-gray-500 tabular-nums">
+                                  {s.count} <span className="text-gray-400">({percent}%)</span>
+                                </span>
+                              </div>
+                              <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full ${isUnspecified ? 'bg-gray-300' : color.bar} transition-all`}
+                                  style={{ width: `${percent}%` }}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-gray-400 italic">No sub-specializations configured for this department.</p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
 
       {stats?.bids_per_job?.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200">
-          <div className="p-5 border-b border-gray-200">
+        <div className="bg-white rounded-xl border border-gray-200 mb-8">
+          <div className="p-5 border-b border-gray-200 flex items-center gap-2">
+            <div className="p-2 bg-purple-100 rounded-lg">
+              <HiChartBar className="text-purple-600 text-lg" />
+            </div>
             <h2 className="font-semibold text-gray-900">Bids Per Position</h2>
           </div>
           <div className="divide-y divide-gray-100">
@@ -96,7 +290,7 @@ export default function AdminDashboard() {
       )}
 
       {/* Bulk Credit Top-Up */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5 mt-6">
+      <div className="bg-white rounded-xl border border-gray-200 p-5">
         <div className="flex items-center gap-3 mb-4">
           <div className="p-2 bg-amber-100 rounded-lg">
             <HiCurrencyDollar className="text-amber-600 text-xl" />

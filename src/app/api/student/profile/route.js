@@ -3,6 +3,11 @@ import dbConnect from '@/lib/db';
 import User from '@/models/User';
 import { authenticate } from '@/lib/auth';
 import { validateRegistrationNo, normalizeRegNo } from '@/lib/validation';
+import {
+  DEPARTMENT_VALUES,
+  getSubSpecializations,
+  isValidSubSpecialization,
+} from '@/lib/departments';
 
 export async function GET(request) {
   try {
@@ -28,7 +33,7 @@ export async function PUT(request) {
     const user = await User.findById(decoded.id);
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
-    const { registration_no, full_name, linkedin, department, cv_consent } = await request.json();
+    const { registration_no, full_name, linkedin, department, sub_specialization, cv_consent } = await request.json();
 
     // Handle CV consent
     if (cv_consent !== undefined) {
@@ -67,16 +72,49 @@ export async function PUT(request) {
       user.linkedin = linkedin.trim();
     }
 
-    const validDepartments = ['DEIE', 'DMME', 'COM', 'DCEE', 'DMENA'];
+    const validDepartments = DEPARTMENT_VALUES;
     if (department !== undefined) {
       if (department && !validDepartments.includes(department)) {
         return NextResponse.json({ error: 'Invalid department' }, { status: 400 });
       }
       user.department = department || null;
+      // Reset sub_specialization when department changes and it's no longer valid.
+      if (
+        user.sub_specialization &&
+        !isValidSubSpecialization(user.department, user.sub_specialization)
+      ) {
+        user.sub_specialization = null;
+      }
     }
 
-    // Mark profile as completed if reg_no, full_name, department, and cv_consent are set
-    if (user.registration_no && user.full_name && user.department && user.cv_consent) {
+    if (sub_specialization !== undefined) {
+      const targetDept = department !== undefined ? department : user.department;
+      const options = getSubSpecializations(targetDept);
+      if (sub_specialization === '' || sub_specialization == null) {
+        // Allow clearing only if the department has no sub-specializations.
+        if (options.length > 0) {
+          return NextResponse.json(
+            { error: 'Please select a sub-specialization for your department' },
+            { status: 400 }
+          );
+        }
+        user.sub_specialization = null;
+      } else {
+        if (!options.includes(sub_specialization)) {
+          return NextResponse.json(
+            { error: 'Invalid sub-specialization for the selected department' },
+            { status: 400 }
+          );
+        }
+        user.sub_specialization = sub_specialization;
+      }
+    }
+
+    // Mark profile as completed if reg_no, full_name, department, and cv_consent are set.
+    // Also require a sub_specialization when the department offers any.
+    const subOptions = getSubSpecializations(user.department);
+    const subOk = subOptions.length === 0 || !!user.sub_specialization;
+    if (user.registration_no && user.full_name && user.department && subOk && user.cv_consent) {
       user.profile_completed = true;
     } else {
       user.profile_completed = false;

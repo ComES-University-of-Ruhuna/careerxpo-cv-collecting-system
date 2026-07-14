@@ -2,15 +2,22 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import { useAuth } from './AuthProvider';
-import { HiLogout, HiShieldCheck } from 'react-icons/hi';
+import { HiLogout, HiShieldCheck, HiAcademicCap } from 'react-icons/hi';
 import logo from '@/assets/logo-light.png';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
+  const pathname = usePathname() || '';
 
   const isSubAdmin =
     user?.role === 'student' && Array.isArray(user?.admin_permissions) && user.admin_permissions.length > 0;
+
+  const inAdminSection = pathname.startsWith('/admin');
+  const toggleHref = inAdminSection ? '/student' : '/admin';
+  const toggleLabel = inAdminSection ? 'Student Dashboard' : 'Admin Panel';
+  const ToggleIcon = inAdminSection ? HiAcademicCap : HiShieldCheck;
 
   return (
     <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
@@ -25,12 +32,12 @@ export default function Navbar() {
             <div className="flex items-center gap-2 sm:gap-4 min-w-0">
               {isSubAdmin && (
                 <Link
-                  href="/admin"
+                  href={toggleHref}
                   className="flex items-center gap-1 text-xs sm:text-sm text-primary-700 bg-primary-50 border border-primary-200 px-2 py-1 rounded-md hover:bg-primary-100 transition shrink-0"
-                  title="Open admin panel"
+                  title={inAdminSection ? 'Switch to student dashboard' : 'Switch to admin panel'}
                 >
-                  <HiShieldCheck />
-                  <span className="hidden sm:inline">Admin Panel</span>
+                  <ToggleIcon />
+                  <span className="hidden sm:inline">{toggleLabel}</span>
                 </Link>
               )}
               <div className="flex items-center gap-2 min-w-0">

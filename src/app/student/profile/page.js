@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { HiUpload, HiDocumentText, HiPencil, HiCheck } from 'react-icons/hi';
+import { DEPARTMENTS, getSubSpecializations } from '@/lib/departments';
 
 export default function ProfilePage() {
   const { user, token, updateUser } = useAuth();
@@ -16,19 +17,16 @@ export default function ProfilePage() {
     full_name: '',
     linkedin: '',
     department: '',
+    sub_specialization: '',
     cv_consent: false,
   };
   const [form, setForm] = useState(initialForm);
   const [savedForm, setSavedForm] = useState(initialForm);
   const isDirty = JSON.stringify(form) !== JSON.stringify(savedForm);
 
-  const departments = [
-    { value: 'DEIE', label: 'DEIE - Electrical & Information Engineering' },
-    { value: 'DMME', label: 'DMME - Mechanical & Manufacturing Engineering' },
-    { value: 'COM', label: 'COM - Computer Engineering' },
-    { value: 'DCEE', label: 'DCEE - Civil & Environmental Engineering' },
-    { value: 'DMENA', label: 'DMENA - Marine Engineering and Naval Architecture' },
-  ];
+  const departments = DEPARTMENTS;
+  const subSpecializations = getSubSpecializations(form.department);
+  const requiresSubSpecialization = subSpecializations.length > 0;
 
   useEffect(() => {
     if (user) {
@@ -37,6 +35,7 @@ export default function ProfilePage() {
         full_name: user.full_name || '',
         linkedin: user.linkedin || '',
         department: user.department || '',
+        sub_specialization: user.sub_specialization || '',
         cv_consent: user.cv_consent || false,
       };
       setForm(next);
@@ -187,7 +186,18 @@ export default function ProfilePage() {
           <label className="block text-sm font-medium text-gray-700 mb-1">Department *</label>
           <select
             value={form.department}
-            onChange={(e) => setForm({ ...form, department: e.target.value })}
+            onChange={(e) => {
+              const nextDept = e.target.value;
+              const nextOptions = getSubSpecializations(nextDept);
+              setForm({
+                ...form,
+                department: nextDept,
+                // Clear sub_specialization if it isn't valid for the new department.
+                sub_specialization: nextOptions.includes(form.sub_specialization)
+                  ? form.sub_specialization
+                  : '',
+              });
+            }}
             className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition"
           >
             <option value="">Select your department</option>
@@ -196,6 +206,22 @@ export default function ProfilePage() {
             ))}
           </select>
         </div>
+
+        {form.department && requiresSubSpecialization && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Sub-specialization *</label>
+            <select
+              value={form.sub_specialization}
+              onChange={(e) => setForm({ ...form, sub_specialization: e.target.value })}
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition"
+            >
+              <option value="">Select your sub-specialization</option>
+              {subSpecializations.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">LinkedIn Profile</label>
@@ -228,7 +254,12 @@ export default function ProfilePage() {
 
         <button
           type="submit"
-          disabled={saving || !isDirty || !form.cv_consent}
+          disabled={
+            saving ||
+            !isDirty ||
+            !form.cv_consent ||
+            (requiresSubSpecialization && !form.sub_specialization)
+          }
           className="flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm"
         >
           <HiCheck />

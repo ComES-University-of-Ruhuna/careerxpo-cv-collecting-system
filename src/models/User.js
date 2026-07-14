@@ -19,6 +19,10 @@ const UserSchema = new mongoose.Schema({
     enum: ['DEIE', 'DMME', 'COM', 'DCEE', 'DMENA', null],
     default: null,
   },
+  sub_specialization: {
+    type: String,
+    default: null,
+  },
   password_hash: { type: String, default: null },
   role: { type: String, enum: ['student', 'admin'], default: 'student' },
   admin_permissions: {
