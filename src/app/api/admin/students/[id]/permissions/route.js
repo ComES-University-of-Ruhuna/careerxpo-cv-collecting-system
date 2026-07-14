@@ -12,7 +12,7 @@ export async function PUT(request, { params }) {
     if (!isValidObjectId(id)) {
       return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
     }
-    const admin = requireAdmin(request);
+    const admin = await requireAdmin(request);
     await dbConnect();
 
     const body = await request.json();
@@ -28,13 +28,17 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ error: `Invalid permission(s): ${invalid.join(', ')}` }, { status: 400 });
     }
 
-    const user = await User.findById(id).select('full_name email role admin_permissions');
+    const user = await User.findById(id).select('full_name email role admin_permissions token_version');
     if (!user || user.role !== 'student') {
       return NextResponse.json({ error: 'Student not found' }, { status: 404 });
     }
 
     const previous = Array.isArray(user.admin_permissions) ? [...user.admin_permissions] : [];
     user.admin_permissions = cleaned;
+    // Invalidate any outstanding JWTs for this user — the next request
+    // carrying the old token will fail the token_version check in
+    // requireAdmin / requirePermission and be forced to re-authenticate.
+    user.token_version = (user.token_version || 0) + 1;
     await user.save();
 
     const summary = cleaned.length === 0 ? 'cleared all admin permissions' : `set admin permissions to [${cleaned.join(', ')}]`;

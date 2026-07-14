@@ -5,6 +5,7 @@ import Company from '@/models/Company';
 import Job from '@/models/Job';
 import { requirePermission, isValidObjectId, ADMIN_PERMISSIONS } from '@/lib/auth';
 import { logActivity } from '@/lib/activity-log';
+import { isValidUrl } from '@/lib/validation';
 
 export async function GET(request, { params }) {
   try {
@@ -50,13 +51,19 @@ export async function PUT(request, { params }) {
         return NextResponse.json({ error: 'Credit cost is required and must be at least 1.' }, { status: 400 });
       }
 
+      // Re-validate URLs on approval so historical rows that pre-date the
+      // stricter guest-submission validator cannot leak dangerous schemes
+      // (javascript:, data:, …) into a real Company record.
+      const safeWebsite = post.company_website && isValidUrl(post.company_website) ? post.company_website : '';
+      const safeLogo = post.company_logo && isValidUrl(post.company_logo) ? post.company_logo : '';
+
       // Create or find company
       let company = await Company.findOne({ name: post.company_name });
       if (!company) {
         company = await Company.create({
           name: post.company_name,
-          logo: post.company_logo,
-          website: post.company_website,
+          logo: safeLogo,
+          website: safeWebsite,
         });
       }
 

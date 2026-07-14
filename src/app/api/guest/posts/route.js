@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import GuestPost from '@/models/GuestPost';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { isValidUrl } from '@/lib/validation';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_REGEX = /^[+\d][\d\s\-()]{6,19}$/;
@@ -52,20 +53,14 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Job description is too long (max 5000 characters).' }, { status: 400 });
     }
 
-    // Validate URL if provided
-    if (company_website?.trim()) {
-      try {
-        new URL(company_website.trim());
-      } catch {
-        return NextResponse.json({ error: 'Invalid company website URL.' }, { status: 400 });
-      }
+    // Validate URL if provided — allow only http(s) schemes so we do not
+    // persist javascript:, data:, or other scheme-injection payloads that
+    // would later be rendered as clickable links to admins and students.
+    if (company_website?.trim() && !isValidUrl(company_website.trim())) {
+      return NextResponse.json({ error: 'Invalid company website URL.' }, { status: 400 });
     }
-    if (company_logo?.trim()) {
-      try {
-        new URL(company_logo.trim());
-      } catch {
-        return NextResponse.json({ error: 'Invalid company logo URL.' }, { status: 400 });
-      }
+    if (company_logo?.trim() && !isValidUrl(company_logo.trim())) {
+      return NextResponse.json({ error: 'Invalid company logo URL.' }, { status: 400 });
     }
 
     // Validate departments

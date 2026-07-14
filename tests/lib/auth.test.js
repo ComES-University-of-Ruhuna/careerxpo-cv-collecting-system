@@ -13,6 +13,24 @@ jest.mock('mongoose', () => ({
   },
 }));
 
+// requireAdmin now performs a DB re-check to enforce token_version and the
+// current role — mock the DB connect helper and the User model so the async
+// path can run without a real MongoDB instance. Use relative paths because
+// jest.mock() does not honour the "@/" jsconfig alias.
+jest.mock('../../src/lib/db', () => ({ __esModule: true, default: jest.fn().mockResolvedValue() }));
+
+const mockUserFindById = jest.fn();
+jest.mock('../../src/models/User', () => ({
+  __esModule: true,
+  default: { findById: (...args) => mockUserFindById(...args) },
+}));
+
+function mockUserLookup(user) {
+  mockUserFindById.mockReturnValueOnce({
+    select: jest.fn().mockResolvedValue(user),
+  });
+}
+
 describe('Auth Library', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -126,24 +144,47 @@ describe('Auth Library', () => {
   });
 
   describe('requireAdmin', () => {
-    it('should return user for admin role', () => {
-      const decoded = { userId: '123', role: 'admin' };
+    it('should return decoded payload for admin role with matching token_version', async () => {
+      const decoded = { id: '507f1f77bcf86cd799439011', role: 'admin', tv: 3 };
       jwt.verify.mockReturnValue(decoded);
+      mockUserLookup({ role: 'admin', admin_permissions: [], token_version: 3 });
       const request = {
         headers: { get: jest.fn((h) => h === 'authorization' ? 'Bearer a.b.c' : null) },
         cookies: { get: jest.fn() },
       };
-      expect(requireAdmin(request)).toEqual(decoded);
+      await expect(requireAdmin(request)).resolves.toEqual(decoded);
     });
 
-    it('should throw Forbidden for non-admin role', () => {
-      const decoded = { userId: '123', role: 'student' };
+    it('should throw Forbidden for non-admin role', async () => {
+      const decoded = { id: '507f1f77bcf86cd799439011', role: 'student', tv: 0 };
       jwt.verify.mockReturnValue(decoded);
       const request = {
         headers: { get: jest.fn((h) => h === 'authorization' ? 'Bearer a.b.c' : null) },
         cookies: { get: jest.fn() },
       };
-      expect(() => requireAdmin(request)).toThrow('Forbidden');
+      await expect(requireAdmin(request)).rejects.toThrow('Forbidden');
+    });
+
+    it('should throw Unauthorized when token_version is stale', async () => {
+      const decoded = { id: '507f1f77bcf86cd799439011', role: 'admin', tv: 1 };
+      jwt.verify.mockReturnValue(decoded);
+      mockUserLookup({ role: 'admin', admin_permissions: [], token_version: 2 });
+      const request = {
+        headers: { get: jest.fn((h) => h === 'authorization' ? 'Bearer a.b.c' : null) },
+        cookies: { get: jest.fn() },
+      };
+      await expect(requireAdmin(request)).rejects.toThrow('Unauthorized');
+    });
+
+    it('should throw Forbidden when DB role no longer says admin', async () => {
+      const decoded = { id: '507f1f77bcf86cd799439011', role: 'admin', tv: 0 };
+      jwt.verify.mockReturnValue(decoded);
+      mockUserLookup({ role: 'student', admin_permissions: [], token_version: 0 });
+      const request = {
+        headers: { get: jest.fn((h) => h === 'authorization' ? 'Bearer a.b.c' : null) },
+        cookies: { get: jest.fn() },
+      };
+      await expect(requireAdmin(request)).rejects.toThrow('Forbidden');
     });
   });
 });

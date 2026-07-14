@@ -9,7 +9,7 @@ import { requireAdmin } from '@/lib/auth';
 // - sub-admins (role === 'student' with admin_permissions.length > 0)
 export async function GET(request) {
   try {
-    requireAdmin(request);
+    await requireAdmin(request);
     await dbConnect();
 
     const users = await User.find({

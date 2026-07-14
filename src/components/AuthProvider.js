@@ -25,15 +25,12 @@ function AuthProviderInner({ children }) {
       return;
     }
 
-    // Legacy: support token param for backward compatibility
-    const urlToken = searchParams.get('token');
-    if (urlToken) {
-      localStorage.setItem('careerxpo_token', urlToken);
-      setToken(urlToken);
-      fetchUser(urlToken);
-      window.history.replaceState({}, '', window.location.pathname);
-      return;
-    }
+    // NOTE: We intentionally do NOT accept a raw ?token= URL parameter here.
+    // Doing so would allow a session-fixation attack: an attacker could craft
+    // a link containing their own JWT and trick a victim into loading it,
+    // silently binding the victim's browser to the attacker's account.
+    // Real sessions arrive via the OAuth `?code=` handshake above or via the
+    // httpOnly cookie set by the callback / login endpoints.
 
     const stored = localStorage.getItem('careerxpo_token');
     if (stored) {

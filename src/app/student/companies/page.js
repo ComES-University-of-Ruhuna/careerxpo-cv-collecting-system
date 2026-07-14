@@ -6,6 +6,17 @@ import toast from 'react-hot-toast';
 import ReactMarkdown from 'react-markdown';
 import { HiCurrencyDollar, HiExternalLink, HiCheck, HiUpload, HiDocumentText, HiSearch } from 'react-icons/hi';
 
+// Only http(s) links are safe to render. Legacy Company records may still
+// contain javascript:/data: payloads inherited from unvalidated guest posts.
+function safeHref(str) {
+  if (!str || typeof str !== 'string') return null;
+  try {
+    const url = new URL(str);
+    if (url.protocol === 'http:' || url.protocol === 'https:') return str;
+  } catch {}
+  return null;
+}
+
 export default function CompaniesPage() {
   const { token, user, updateUser } = useAuth();
   const [companies, setCompanies] = useState([]);
@@ -194,8 +205,8 @@ export default function CompaniesPage() {
                   )}
                   <div>
                     <h2 className="font-semibold text-lg text-gray-900">{company.name}</h2>
-                    {company.website && (
-                      <a href={company.website} target="_blank" rel="noopener noreferrer" className="text-sm text-primary-600 hover:underline flex items-center gap-1">
+                    {company.website && safeHref(company.website) && (
+                      <a href={safeHref(company.website)} target="_blank" rel="noopener noreferrer" className="text-sm text-primary-600 hover:underline flex items-center gap-1">
                         <HiExternalLink /> Website
                       </a>
                     )}

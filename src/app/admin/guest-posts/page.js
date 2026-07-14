@@ -5,6 +5,18 @@ import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { HiMail, HiPhone, HiUser, HiOfficeBuilding, HiCheck, HiX, HiEye, HiTrash, HiClock, HiCheckCircle, HiXCircle } from 'react-icons/hi';
 
+// Only http(s) links are safe to render. Older guest posts (submitted before
+// the server-side URL validator was tightened) may still contain
+// javascript:/data: payloads, so we filter defensively at render time too.
+function safeHref(str) {
+  if (!str || typeof str !== 'string') return null;
+  try {
+    const url = new URL(str);
+    if (url.protocol === 'http:' || url.protocol === 'https:') return str;
+  } catch {}
+  return null;
+}
+
 const STATUS_TABS = [
   { value: 'pending', label: 'Pending', icon: <HiClock />, color: 'text-amber-600' },
   { value: 'approved', label: 'Approved', icon: <HiCheckCircle />, color: 'text-green-600' },
@@ -153,7 +165,21 @@ export default function AdminGuestPostsPage() {
                   {selected.company_website && (
                     <div>
                       <span className="text-gray-500">Website:</span>
-                      <a href={selected.company_website} target="_blank" rel="noopener noreferrer" className="ml-2 text-primary-600 hover:underline">{selected.company_website}</a>
+                      {safeHref(selected.company_website) ? (
+                        <a
+                          href={safeHref(selected.company_website)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="ml-2 text-primary-600 hover:underline break-all"
+                        >
+                          {selected.company_website}
+                        </a>
+                      ) : (
+                        <span className="ml-2 text-gray-500 break-all">
+                          {selected.company_website}{' '}
+                          <span className="text-xs text-red-500">(unsafe URL — not linked)</span>
+                        </span>
+                      )}
                     </div>
                   )}
                   {selected.departments?.length > 0 && (

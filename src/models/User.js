@@ -30,6 +30,12 @@ const UserSchema = new mongoose.Schema({
     enum: ['dashboard', 'companies', 'jobs', 'linkedin-jobs', 'guest-posts', 'students', 'logs'],
     default: [],
   },
+  // Monotonically-increasing counter used to invalidate outstanding JWTs
+  // when an account's authorization surface changes (role change, admin
+  // permission grant/revoke, hard logout, etc.). The token payload carries
+  // the version at sign time; auth helpers compare it against the DB and
+  // reject tokens that fall behind.
+  token_version: { type: Number, default: 0 },
   cv_drive_id: { type: String, default: null },
   cv_url: { type: String, default: null },
   remaining_credits: { type: Number, default: 100 },

@@ -3,9 +3,15 @@ import dbConnect from '@/lib/db';
 import Company from '@/models/Company';
 import Job from '@/models/Job';
 import { cacheGetOrSet, CacheKeys, CacheTTL } from '@/lib/cache';
+import { requireAuth } from '@/lib/auth';
 
 export async function GET(request) {
   try {
+    // Authenticated students only. Company/job listings include internal
+    // fields (credit_cost, max_applicants, deadlines) that must not leak
+    // to unauthenticated clients.
+    requireAuth(request);
+
     const { searchParams } = new URL(request.url);
     const department = searchParams.get('department');
 
@@ -38,7 +44,8 @@ export async function GET(request) {
     );
 
     return NextResponse.json({ companies: companiesWithJobs });
-  } catch {
+  } catch (error) {
+    if (error.message === 'Unauthorized') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

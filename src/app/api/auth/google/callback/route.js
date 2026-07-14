@@ -67,6 +67,7 @@ export async function GET(request) {
       email: user.email,
       registration_no: user.registration_no,
       role: user.role,
+      tv: user.token_version || 0,
     });
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';

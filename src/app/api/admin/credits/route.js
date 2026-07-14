@@ -8,7 +8,7 @@ const VALID_DEPARTMENTS = ['DEIE', 'DMME', 'COM', 'DCEE', 'DMENA'];
 
 export async function POST(request) {
   try {
-    const admin = requireAdmin(request);
+    const admin = await requireAdmin(request);
     await dbConnect();
 
     const { amount, department } = await request.json();

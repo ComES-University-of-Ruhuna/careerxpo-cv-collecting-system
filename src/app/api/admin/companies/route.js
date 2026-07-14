@@ -4,16 +4,7 @@ import Company from '@/models/Company';
 import { requirePermission, isValidObjectId, ADMIN_PERMISSIONS } from '@/lib/auth';
 import { logActivity } from '@/lib/activity-log';
 import { invalidateCompanyCaches } from '@/lib/cache';
-
-function isValidUrl(str) {
-  if (!str) return true;
-  try {
-    const url = new URL(str);
-    return ['http:', 'https:'].includes(url.protocol);
-  } catch {
-    return false;
-  }
-}
+import { isValidUrl } from '@/lib/validation';
 
 export async function GET(request) {
   try {
