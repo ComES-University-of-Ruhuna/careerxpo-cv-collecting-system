@@ -6,7 +6,7 @@ import Sidebar from '@/components/Sidebar';
 import Footer from '@/components/Footer';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useMemo } from 'react';
-import { HiHome, HiOfficeBuilding, HiBriefcase, HiChartBar, HiUserGroup, HiClipboardList, HiInbox, HiGlobeAlt } from 'react-icons/hi';
+import { HiHome, HiOfficeBuilding, HiBriefcase, HiChartBar, HiUserGroup, HiClipboardList, HiInbox, HiGlobeAlt, HiKey } from 'react-icons/hi';
 
 const ADMIN_LINKS = [
   { href: '/admin', label: 'Dashboard', icon: <HiHome />, permission: 'dashboard' },
@@ -15,6 +15,7 @@ const ADMIN_LINKS = [
   { href: '/admin/linkedin-jobs', label: 'LinkedIn Jobs', icon: <HiGlobeAlt />, permission: 'linkedin-jobs' },
   { href: '/admin/guest-posts', label: 'Guest Posts', icon: <HiInbox />, permission: 'guest-posts' },
   { href: '/admin/students', label: 'Students', icon: <HiUserGroup />, permission: 'students' },
+  { href: '/admin/admins', label: 'Admins', icon: <HiKey />, superAdminOnly: true },
   { href: '/admin/logs', label: 'Activity Logs', icon: <HiClipboardList />, permission: 'logs' },
 ];
 
@@ -43,7 +44,7 @@ function AdminGuard({ children }) {
   const visibleLinks = useMemo(() => {
     if (isSuperAdmin(user)) return ADMIN_LINKS;
     const perms = new Set(user?.admin_permissions || []);
-    return ADMIN_LINKS.filter((l) => perms.has(l.permission));
+    return ADMIN_LINKS.filter((l) => !l.superAdminOnly && perms.has(l.permission));
   }, [user]);
 
   useEffect(() => {
@@ -56,7 +57,8 @@ function AdminGuard({ children }) {
     // Sub-admin: redirect away from tabs they do not have permission for
     const active = findActiveLink(pathname);
     const perms = new Set(user?.admin_permissions || []);
-    if (active && !perms.has(active.permission)) {
+    const canAccess = active && !active.superAdminOnly && perms.has(active.permission);
+    if (active && !canAccess) {
       const fallback = visibleLinks[0]?.href || '/student';
       router.replace(fallback);
     }
