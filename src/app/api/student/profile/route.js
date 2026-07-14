@@ -6,7 +6,7 @@ import { validateRegistrationNo, normalizeRegNo } from '@/lib/validation';
 import {
   DEPARTMENT_VALUES,
   getSubSpecializations,
-  isValidSubSpecialization,
+  validateSubSpecializations,
 } from '@/lib/departments';
 
 export async function GET(request) {
@@ -78,42 +78,33 @@ export async function PUT(request) {
         return NextResponse.json({ error: 'Invalid department' }, { status: 400 });
       }
       user.department = department || null;
-      // Reset sub_specialization when department changes and it's no longer valid.
-      if (
-        user.sub_specialization &&
-        !isValidSubSpecialization(user.department, user.sub_specialization)
-      ) {
-        user.sub_specialization = null;
-      }
+      // Filter out any previously-saved sub-specializations that are no longer
+      // valid for the new department.
+      const check = validateSubSpecializations(user.department, user.sub_specialization || []);
+      user.sub_specialization = check.valid ? check.cleaned : [];
     }
 
     if (sub_specialization !== undefined) {
       const targetDept = department !== undefined ? department : user.department;
       const options = getSubSpecializations(targetDept);
-      if (sub_specialization === '' || sub_specialization == null) {
-        // Allow clearing only if the department has no sub-specializations.
-        if (options.length > 0) {
-          return NextResponse.json(
-            { error: 'Please select a sub-specialization for your department' },
-            { status: 400 }
-          );
-        }
-        user.sub_specialization = null;
-      } else {
-        if (!options.includes(sub_specialization)) {
-          return NextResponse.json(
-            { error: 'Invalid sub-specialization for the selected department' },
-            { status: 400 }
-          );
-        }
-        user.sub_specialization = sub_specialization;
+      const result = validateSubSpecializations(targetDept, sub_specialization);
+      if (!result.valid) {
+        return NextResponse.json({ error: result.error }, { status: 400 });
       }
+      if (options.length > 0 && result.cleaned.length === 0) {
+        return NextResponse.json(
+          { error: 'Please select at least one sub-specialization for your department' },
+          { status: 400 }
+        );
+      }
+      user.sub_specialization = result.cleaned;
     }
 
     // Mark profile as completed if reg_no, full_name, department, and cv_consent are set.
     // Also require a sub_specialization when the department offers any.
     const subOptions = getSubSpecializations(user.department);
-    const subOk = subOptions.length === 0 || !!user.sub_specialization;
+    const currentSubs = Array.isArray(user.sub_specialization) ? user.sub_specialization : [];
+    const subOk = subOptions.length === 0 || currentSubs.length > 0;
     if (user.registration_no && user.full_name && user.department && subOk && user.cv_consent) {
       user.profile_completed = true;
     } else {

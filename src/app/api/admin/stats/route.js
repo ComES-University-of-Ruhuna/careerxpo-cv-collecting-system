@@ -49,6 +49,14 @@ export async function GET(request) {
           User.aggregate([
             { $match: { role: 'student', department: { $ne: null } } },
             {
+              // Preserve students that have no sub_specialization picked
+              // so they are counted as "Not specified" per department.
+              $unwind: {
+                path: '$sub_specialization',
+                preserveNullAndEmptyArrays: true,
+              },
+            },
+            {
               $group: {
                 _id: {
                   department: '$department',

@@ -20,8 +20,8 @@ const UserSchema = new mongoose.Schema({
     default: null,
   },
   sub_specialization: {
-    type: String,
-    default: null,
+    type: [String],
+    default: [],
   },
   password_hash: { type: String, default: null },
   role: { type: String, enum: ['student', 'admin'], default: 'student' },

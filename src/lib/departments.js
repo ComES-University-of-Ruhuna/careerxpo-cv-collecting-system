@@ -34,8 +34,48 @@ export function getSubSpecializations(department) {
   return SUB_SPECIALIZATIONS[department] || [];
 }
 
-export function isValidSubSpecialization(department, subSpecialization) {
+// Returns { valid, cleaned, error } for a sub-specialization selection.
+// - Accepts an array (preferred) or a single string.
+// - Deduplicates entries and preserves canonical order from SUB_SPECIALIZATIONS.
+// - Ensures every entry belongs to the given department.
+export function validateSubSpecializations(department, value) {
   const options = getSubSpecializations(department);
-  if (options.length === 0) return subSpecialization === '' || subSpecialization == null;
-  return options.includes(subSpecialization);
+
+  let raw = [];
+  if (Array.isArray(value)) raw = value;
+  else if (typeof value === 'string' && value.length > 0) raw = [value];
+  else if (value == null) raw = [];
+  else return { valid: false, cleaned: [], error: 'Invalid sub-specialization value' };
+
+  // Dedupe.
+  const set = new Set(raw.filter((v) => typeof v === 'string' && v.length > 0));
+
+  if (options.length === 0) {
+    if (set.size > 0) {
+      return {
+        valid: false,
+        cleaned: [],
+        error: 'The selected department has no sub-specializations',
+      };
+    }
+    return { valid: true, cleaned: [], error: null };
+  }
+
+  for (const entry of set) {
+    if (!options.includes(entry)) {
+      return {
+        valid: false,
+        cleaned: [],
+        error: `Invalid sub-specialization "${entry}" for the selected department`,
+      };
+    }
+  }
+
+  // Preserve canonical order from the options list.
+  const cleaned = options.filter((o) => set.has(o));
+  return { valid: true, cleaned, error: null };
+}
+
+export function isValidSubSpecialization(department, value) {
+  return validateSubSpecializations(department, value).valid;
 }

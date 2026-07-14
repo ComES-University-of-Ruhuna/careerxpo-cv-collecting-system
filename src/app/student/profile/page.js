@@ -17,7 +17,7 @@ export default function ProfilePage() {
     full_name: '',
     linkedin: '',
     department: '',
-    sub_specialization: '',
+    sub_specialization: [],
     cv_consent: false,
   };
   const [form, setForm] = useState(initialForm);
@@ -35,7 +35,11 @@ export default function ProfilePage() {
         full_name: user.full_name || '',
         linkedin: user.linkedin || '',
         department: user.department || '',
-        sub_specialization: user.sub_specialization || '',
+        sub_specialization: Array.isArray(user.sub_specialization)
+          ? user.sub_specialization
+          : user.sub_specialization
+            ? [user.sub_specialization]
+            : [],
         cv_consent: user.cv_consent || false,
       };
       setForm(next);
@@ -192,10 +196,8 @@ export default function ProfilePage() {
               setForm({
                 ...form,
                 department: nextDept,
-                // Clear sub_specialization if it isn't valid for the new department.
-                sub_specialization: nextOptions.includes(form.sub_specialization)
-                  ? form.sub_specialization
-                  : '',
+                // Keep only sub_specializations that are valid for the new department.
+                sub_specialization: form.sub_specialization.filter((s) => nextOptions.includes(s)),
               });
             }}
             className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition"
@@ -209,17 +211,43 @@ export default function ProfilePage() {
 
         {form.department && requiresSubSpecialization && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Sub-specialization *</label>
-            <select
-              value={form.sub_specialization}
-              onChange={(e) => setForm({ ...form, sub_specialization: e.target.value })}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition"
-            >
-              <option value="">Select your sub-specialization</option>
-              {subSpecializations.map((s) => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
+            <div className="flex items-baseline justify-between mb-2">
+              <label className="block text-sm font-medium text-gray-700">Sub-specializations *</label>
+              <span className="text-xs text-gray-400">
+                {form.sub_specialization.length} selected
+              </span>
+            </div>
+            <p className="text-xs text-gray-500 mb-2">Select all that apply.</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {subSpecializations.map((s) => {
+                const checked = form.sub_specialization.includes(s);
+                return (
+                  <label
+                    key={s}
+                    className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer transition text-sm ${
+                      checked
+                        ? 'border-primary-500 bg-primary-50 text-primary-800'
+                        : 'border-gray-300 hover:border-gray-400 text-gray-700'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={(e) => {
+                        setForm({
+                          ...form,
+                          sub_specialization: e.target.checked
+                            ? [...form.sub_specialization, s]
+                            : form.sub_specialization.filter((v) => v !== s),
+                        });
+                      }}
+                      className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                    />
+                    <span>{s}</span>
+                  </label>
+                );
+              })}
+            </div>
           </div>
         )}
 
@@ -258,7 +286,7 @@ export default function ProfilePage() {
             saving ||
             !isDirty ||
             !form.cv_consent ||
-            (requiresSubSpecialization && !form.sub_specialization)
+            (requiresSubSpecialization && form.sub_specialization.length === 0)
           }
           className="flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm"
         >
