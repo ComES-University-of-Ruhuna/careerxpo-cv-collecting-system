@@ -125,6 +125,98 @@ export async function uploadCVToDrive(fileBuffer, registrationNo, studentName, c
   };
 }
 
+const PAYMENT_SLIPS_FOLDER_NAME = 'Payment_Slips';
+const ALLOWED_SLIP_MIME_TYPES = new Set([
+  'application/pdf',
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp',
+]);
+const MIME_EXTENSIONS = {
+  'application/pdf': 'pdf',
+  'image/jpeg': 'jpg',
+  'image/jpg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+};
+
+/**
+ * Upload a registration-fee bank slip for a student. The file is stored
+ * inside a `Payment_Slips` folder under the configured root drive folder
+ * and named using the student's registration number.
+ */
+export async function uploadPaymentSlipToDrive(fileBuffer, registrationNo, mimeType) {
+  if (!ALLOWED_SLIP_MIME_TYPES.has(mimeType)) {
+    throw new Error('Unsupported file type. Please upload a PDF or image (JPG/PNG/WEBP).');
+  }
+
+  const drive = getDrive();
+  const rootFolderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
+  if (!rootFolderId) {
+    throw new Error('GOOGLE_DRIVE_FOLDER_ID is not configured.');
+  }
+
+  const safeRegNo = registrationNo.replace(/\//g, '_');
+  const ext = MIME_EXTENSIONS[mimeType];
+  const fileName = `PaymentSlip_${safeRegNo}.${ext}`;
+
+  const targetFolderId = await getOrCreateFolder(drive, PAYMENT_SLIPS_FOLDER_NAME, rootFolderId);
+
+  // Remove any prior slip for this registration number (across extensions)
+  // so re-uploads replace the previous file cleanly.
+  const safePrefix = `PaymentSlip_${safeRegNo}`.replace(/'/g, "\\'");
+  const existing = await drive.files.list({
+    q: `name contains '${safePrefix}' and '${targetFolderId}' in parents and trashed=false`,
+    fields: 'files(id, name)',
+  });
+  for (const file of existing.data.files || []) {
+    if (file.name === fileName || file.name.startsWith(`${safePrefix}.`)) {
+      try {
+        await drive.files.delete({ fileId: file.id });
+      } catch {
+        // Ignore delete failures — proceed to upload the new copy.
+      }
+    }
+  }
+
+  const stream = new Readable();
+  stream.push(fileBuffer);
+  stream.push(null);
+
+  const response = await drive.files.create({
+    requestBody: {
+      name: fileName,
+      mimeType,
+      parents: [targetFolderId],
+    },
+    media: {
+      mimeType,
+      body: stream,
+    },
+    fields: 'id, webViewLink',
+  });
+
+  await drive.permissions.create({
+    fileId: response.data.id,
+    requestBody: {
+      role: 'reader',
+      type: 'anyone',
+    },
+  });
+
+  const file = await drive.files.get({
+    fileId: response.data.id,
+    fields: 'id, webViewLink',
+  });
+
+  return {
+    fileId: file.data.id,
+    webViewLink: file.data.webViewLink,
+    fileName,
+  };
+}
+
 export async function getJobFolderLink(companyName, jobTitle) {
   const drive = getDrive();
   const rootFolderId = process.env.GOOGLE_DRIVE_FOLDER_ID;

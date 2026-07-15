@@ -42,6 +42,24 @@ const UserSchema = new mongoose.Schema({
   cv_consent: { type: Boolean, default: false },
   cv_consent_at: { type: Date, default: null },
   profile_completed: { type: Boolean, default: false },
+  // Registration fee bank-slip submission
+  payment_slip_drive_id: { type: String, default: null },
+  payment_slip_url: { type: String, default: null },
+  payment_slip_uploaded_at: { type: Date, default: null },
+  payment_slip_status: {
+    type: String,
+    enum: ['none', 'pending', 'verified', 'rejected'],
+    default: 'none',
+  },
+  payment_details: {
+    payer_name: { type: String, default: '' },
+    bank_name: { type: String, default: '' },
+    branch: { type: String, default: '' },
+    deposit_date: { type: Date, default: null },
+    reference_no: { type: String, default: '' },
+    amount: { type: Number, default: 0 },
+    notes: { type: String, default: '' },
+  },
   created_at: { type: Date, default: Date.now },
 });
 
