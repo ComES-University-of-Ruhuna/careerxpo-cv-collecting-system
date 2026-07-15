@@ -161,7 +161,7 @@ export default function AdminGuestPostsPage() {
                 </div>
 
                 {/* Details */}
-                <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                   {selected.company_website && (
                     <div>
                       <span className="text-gray-500">Website:</span>

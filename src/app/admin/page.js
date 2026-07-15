@@ -275,12 +275,12 @@ export default function AdminDashboard() {
           </div>
           <div className="divide-y divide-gray-100">
             {stats.bids_per_job.map((item) => (
-              <div key={item._id} className="p-4 flex justify-between items-center">
-                <div>
-                  <p className="font-medium text-gray-900">{item.job_title}</p>
-                  <p className="text-sm text-gray-500">{item.company_name}</p>
+              <div key={item._id} className="p-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                <div className="min-w-0">
+                  <p className="font-medium text-gray-900 truncate">{item.job_title}</p>
+                  <p className="text-sm text-gray-500 truncate">{item.company_name}</p>
                 </div>
-                <span className="bg-primary-100 text-primary-700 text-sm px-3 py-1 rounded-full font-medium">
+                <span className="bg-primary-100 text-primary-700 text-sm px-3 py-1 rounded-full font-medium self-start sm:self-auto shrink-0">
                   {item.total_bids} bid{item.total_bids !== 1 ? 's' : ''}
                 </span>
               </div>

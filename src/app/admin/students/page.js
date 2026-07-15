@@ -178,7 +178,7 @@ export default function AdminStudents() {
               {browseLoading ? 'Loading…' : `${browseList.length} student(s) shown`}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <HiFilter className="text-gray-400" />
             <select
               value={browseDepartment}

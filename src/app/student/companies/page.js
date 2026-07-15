@@ -245,8 +245,8 @@ export default function CompaniesPage() {
                       return (
                         <div key={job._id} className={`bg-gray-50 rounded-lg p-4 ${isClosed && !hasBid ? 'opacity-60' : ''}`}>
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
-                            <div>
-                              <div className="flex items-center gap-2">
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
                                 <p className="font-medium text-gray-900">{job.title}</p>
                                 {isClosed && (
                                   <span className="text-xs px-1.5 py-0.5 rounded bg-red-100 text-red-600 font-medium">Closed</span>
@@ -265,7 +265,7 @@ export default function CompaniesPage() {
                                 </p>
                               )}
                             </div>
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-3 flex-wrap sm:justify-end shrink-0">
                               <span className="text-xs font-medium text-gray-500">
                                 <HiCurrencyDollar className="inline" /> {job.credit_cost} credits
                               </span>

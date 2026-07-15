@@ -281,7 +281,7 @@ export default function AdminPaymentsPage() {
                         )}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-right">
-                        <div className="inline-flex items-center gap-2">
+                        <div className="inline-flex items-center gap-2 flex-wrap justify-end">
                           <button
                             type="button"
                             onClick={() => updateStatus(s._id, 'verified')}
