@@ -209,7 +209,6 @@ export default function AdminPaymentsPage() {
                   <th className="px-4 py-3 text-left font-medium">Student</th>
                   <th className="px-4 py-3 text-left font-medium">Reg No</th>
                   <th className="px-4 py-3 text-left font-medium">Dept</th>
-                  <th className="px-4 py-3 text-left font-medium">Amount</th>
                   <th className="px-4 py-3 text-left font-medium">Bank / Ref</th>
                   <th className="px-4 py-3 text-left font-medium">Deposit</th>
                   <th className="px-4 py-3 text-left font-medium">Submitted</th>
@@ -246,9 +245,6 @@ export default function AdminPaymentsPage() {
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap font-mono text-xs">{s.registration_no || '—'}</td>
                       <td className="px-4 py-3 whitespace-nowrap">{s.department || '—'}</td>
-                      <td className="px-4 py-3 whitespace-nowrap font-medium">
-                        LKR {(d.amount ?? 0).toLocaleString()}
-                      </td>
                       <td className="px-4 py-3">
                         <p className="text-gray-900">{d.bank_name || '—'}</p>
                         <p className="text-xs text-gray-500 truncate max-w-[160px]">
