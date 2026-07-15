@@ -3,7 +3,8 @@
 import { useAuth } from '@/components/AuthProvider';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { HiSearch, HiRefresh, HiTrash, HiEye, HiX, HiShieldCheck } from 'react-icons/hi';
+import { HiSearch, HiRefresh, HiTrash, HiEye, HiX, HiShieldCheck, HiFilter, HiExternalLink } from 'react-icons/hi';
+import { DEPARTMENTS } from '@/lib/departments';
 
 const PERMISSION_OPTIONS = [
   { key: 'dashboard', label: 'Dashboard', description: 'View stats and platform overview' },
@@ -12,6 +13,7 @@ const PERMISSION_OPTIONS = [
   { key: 'linkedin-jobs', label: 'LinkedIn Jobs', description: 'Manage LinkedIn job links' },
   { key: 'guest-posts', label: 'Guest Posts', description: 'Review guest job submissions' },
   { key: 'students', label: 'Students', description: 'Search and manage student accounts' },
+  { key: 'payments', label: 'Payments', description: 'Review and approve registration fee slips' },
   { key: 'logs', label: 'Activity Logs', description: 'View admin activity history' },
 ];
 
@@ -26,6 +28,38 @@ export default function AdminStudents() {
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [permDraft, setPermDraft] = useState([]);
   const [savingPerms, setSavingPerms] = useState(false);
+  // Browse mode — table of students filtered by department
+  const [browseList, setBrowseList] = useState([]);
+  const [browseDepartment, setBrowseDepartment] = useState('');
+  const [browseLoading, setBrowseLoading] = useState(false);
+
+  async function fetchBrowseList() {
+    if (!token) return;
+    setBrowseLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (browseDepartment) params.set('department', browseDepartment);
+      const res = await fetch(`/api/admin/students?${params.toString()}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || 'Failed to load students');
+        setBrowseList([]);
+        return;
+      }
+      setBrowseList(data.students || []);
+    } catch {
+      toast.error('Failed to load students');
+    } finally {
+      setBrowseLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    fetchBrowseList();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, browseDepartment]);
 
   async function handleSearch(e) {
     e?.preventDefault();
@@ -134,6 +168,143 @@ export default function AdminStudents() {
   return (
     <div>
       <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6">Student Management</h1>
+
+      {/* Browse all students — filterable table */}
+      <div className="bg-white rounded-xl border border-gray-200 mb-6">
+        <div className="p-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h2 className="font-semibold text-gray-900">All Students</h2>
+            <p className="text-xs text-gray-500 mt-0.5">
+              {browseLoading ? 'Loading…' : `${browseList.length} student(s) shown`}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <HiFilter className="text-gray-400" />
+            <select
+              value={browseDepartment}
+              onChange={(e) => setBrowseDepartment(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
+            >
+              <option value="">All departments</option>
+              {DEPARTMENTS.map((d) => (
+                <option key={d.value} value={d.value}>
+                  {d.value}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={fetchBrowseList}
+              className="inline-flex items-center gap-1.5 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
+            >
+              <HiRefresh /> Refresh
+            </button>
+          </div>
+        </div>
+
+        {browseLoading ? (
+          <div className="p-12 flex justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" />
+          </div>
+        ) : browseList.length === 0 ? (
+          <p className="p-12 text-center text-gray-400 text-sm">No students found for this filter.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead className="bg-gray-50 text-gray-600 text-xs uppercase tracking-wide">
+                <tr>
+                  <th className="px-4 py-3 text-left font-medium">Student</th>
+                  <th className="px-4 py-3 text-left font-medium">Reg No</th>
+                  <th className="px-4 py-3 text-left font-medium">Dept</th>
+                  <th className="px-4 py-3 text-left font-medium">Credits</th>
+                  <th className="px-4 py-3 text-left font-medium">Bids</th>
+                  <th className="px-4 py-3 text-left font-medium">CV</th>
+                  <th className="px-4 py-3 text-left font-medium">Payment</th>
+                  <th className="px-4 py-3 text-right font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {browseList.map((s) => {
+                  const payment = s.payment_slip_status || 'none';
+                  const paymentStyle =
+                    payment === 'verified'
+                      ? 'bg-green-50 text-green-700 border-green-200'
+                      : payment === 'pending'
+                        ? 'bg-blue-50 text-blue-700 border-blue-200'
+                        : payment === 'rejected'
+                          ? 'bg-red-50 text-red-700 border-red-200'
+                          : 'bg-gray-50 text-gray-500 border-gray-200';
+                  return (
+                    <tr
+                      key={s._id}
+                      className={`hover:bg-gray-50 ${
+                        selected?._id === s._id ? 'bg-primary-50' : ''
+                      }`}
+                    >
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2 min-w-0">
+                          {s.avatar && (
+                            <img
+                              src={s.avatar}
+                              alt=""
+                              className="w-7 h-7 rounded-full"
+                              referrerPolicy="no-referrer"
+                            />
+                          )}
+                          <div className="min-w-0">
+                            <p className="font-medium text-gray-900 truncate">{s.full_name || '—'}</p>
+                            <p className="text-xs text-gray-500 truncate">{s.email}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap font-mono text-xs">{s.registration_no || '—'}</td>
+                      <td className="px-4 py-3 whitespace-nowrap">{s.department || '—'}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-primary-600 font-medium">
+                        {s.remaining_credits ?? 0}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 text-xs font-medium">
+                          {s.bids_count ?? 0}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        {s.cv_url ? (
+                          <a
+                            href={s.cv_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-green-600 hover:underline text-xs"
+                          >
+                            View <HiExternalLink />
+                          </a>
+                        ) : (
+                          <span className="text-xs text-gray-400">—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full border text-xs font-medium ${paymentStyle}`}
+                        >
+                          {payment}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-right">
+                        <button
+                          type="button"
+                          onClick={() => viewStudent(s._id)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium bg-primary-50 text-primary-700 border border-primary-200 rounded hover:bg-primary-100"
+                        >
+                          <HiEye /> View & Bids
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       {/* Search */}
       <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3 mb-6">

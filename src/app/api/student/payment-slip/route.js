@@ -108,9 +108,9 @@ export async function POST(request) {
     }
 
     const amount = amountRaw ? Number(amountRaw) : REGISTRATION_FEE_LKR;
-    if (!Number.isFinite(amount) || amount < REGISTRATION_FEE_LKR) {
+    if (!Number.isFinite(amount) || amount !== REGISTRATION_FEE_LKR) {
       return NextResponse.json(
-        { error: `The registration fee is LKR ${REGISTRATION_FEE_LKR}. Please enter the correct amount.` },
+        { error: `The registration fee is fixed at LKR ${REGISTRATION_FEE_LKR}.` },
         { status: 400 }
       );
     }

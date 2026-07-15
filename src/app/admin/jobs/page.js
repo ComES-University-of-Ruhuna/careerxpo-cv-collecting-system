@@ -16,6 +16,7 @@ export default function AdminJobs() {
   const [creditMethod, setCreditMethod] = useState('manual');
   const [formula, setFormula] = useState({ base_value: '20', rating: 3, domain_demand: '1.0' });
   const [loadingFolder, setLoadingFolder] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const allDepartments = ['DEIE', 'DMME', 'COM', 'DCEE', 'DMENA'];
   const domainDemandOptions = [
@@ -88,6 +89,7 @@ export default function AdminJobs() {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    if (submitting) return;
     if (!form.company_id || !form.title) {
       toast.error('Company and title are required');
       return;
@@ -121,6 +123,7 @@ export default function AdminJobs() {
     const url = editing ? `/api/admin/jobs/${editing}` : '/api/admin/jobs';
     const method = editing ? 'PUT' : 'POST';
 
+    setSubmitting(true);
     try {
       const res = await fetch(url, {
         method,
@@ -135,6 +138,8 @@ export default function AdminJobs() {
       loadData();
     } catch {
       toast.error('Operation failed');
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -401,8 +406,12 @@ export default function AdminJobs() {
               <label className="block text-sm font-medium text-gray-700 mb-1">Description (Markdown supported)</label>
               <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={5} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" />
             </div>
-            <button type="submit" className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-medium text-sm">
-              {editing ? 'Update Job' : 'Create Job'}
+            <button
+              type="submit"
+              disabled={submitting}
+              className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-medium text-sm disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {submitting ? (editing ? 'Updating...' : 'Creating...') : editing ? 'Update Job' : 'Create Job'}
             </button>
           </form>
         </div>

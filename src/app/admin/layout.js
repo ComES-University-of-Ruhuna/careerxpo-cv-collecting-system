@@ -6,7 +6,7 @@ import Sidebar from '@/components/Sidebar';
 import Footer from '@/components/Footer';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useMemo } from 'react';
-import { HiHome, HiOfficeBuilding, HiBriefcase, HiChartBar, HiUserGroup, HiClipboardList, HiInbox, HiGlobeAlt, HiKey } from 'react-icons/hi';
+import { HiHome, HiOfficeBuilding, HiBriefcase, HiChartBar, HiUserGroup, HiClipboardList, HiInbox, HiGlobeAlt, HiKey, HiCash } from 'react-icons/hi';
 
 const ADMIN_LINKS = [
   { href: '/admin', label: 'Dashboard', icon: <HiHome />, permission: 'dashboard' },
@@ -15,6 +15,7 @@ const ADMIN_LINKS = [
   { href: '/admin/linkedin-jobs', label: 'LinkedIn Jobs', icon: <HiGlobeAlt />, permission: 'linkedin-jobs' },
   { href: '/admin/guest-posts', label: 'Guest Posts', icon: <HiInbox />, permission: 'guest-posts' },
   { href: '/admin/students', label: 'Students', icon: <HiUserGroup />, permission: 'students' },
+  { href: '/admin/payments', label: 'Payments', icon: <HiCash />, permission: 'payments' },
   { href: '/admin/admins', label: 'Admins', icon: <HiKey />, superAdminOnly: true },
   { href: '/admin/logs', label: 'Activity Logs', icon: <HiClipboardList />, permission: 'logs' },
 ];

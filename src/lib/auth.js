@@ -8,6 +8,7 @@ export const ADMIN_PERMISSIONS = Object.freeze({
   LINKEDIN_JOBS: 'linkedin-jobs',
   GUEST_POSTS: 'guest-posts',
   STUDENTS: 'students',
+  PAYMENTS: 'payments',
   LOGS: 'logs',
 });
 

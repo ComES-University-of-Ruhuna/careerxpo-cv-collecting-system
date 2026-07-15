@@ -27,7 +27,7 @@ const UserSchema = new mongoose.Schema({
   role: { type: String, enum: ['student', 'admin'], default: 'student' },
   admin_permissions: {
     type: [String],
-    enum: ['dashboard', 'companies', 'jobs', 'linkedin-jobs', 'guest-posts', 'students', 'logs'],
+    enum: ['dashboard', 'companies', 'jobs', 'linkedin-jobs', 'guest-posts', 'students', 'payments', 'logs'],
     default: [],
   },
   // Monotonically-increasing counter used to invalidate outstanding JWTs

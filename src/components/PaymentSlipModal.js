@@ -201,13 +201,15 @@ export default function PaymentSlipModal({ open, onClose, token, user, onSuccess
               <Field label="Amount (LKR) *">
                 <input
                   type="number"
-                  min={REGISTRATION_FEE_LKR}
-                  step="0.01"
-                  value={form.amount}
-                  onChange={(e) => setForm({ ...form, amount: e.target.value })}
-                  required
-                  className="input"
+                  value={REGISTRATION_FEE_LKR}
+                  readOnly
+                  disabled
+                  aria-readonly="true"
+                  className="input bg-gray-100 text-gray-600 cursor-not-allowed"
                 />
+                <p className="text-xs text-gray-400 mt-1">
+                  The registration fee is fixed at LKR {REGISTRATION_FEE_LKR}.
+                </p>
               </Field>
             </div>
 

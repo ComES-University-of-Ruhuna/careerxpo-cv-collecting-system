@@ -30,6 +30,14 @@ export default function CompaniesPage() {
 
   useEffect(() => {
     if (!token) return;
+    // Job openings are only accessible once the student's profile is complete.
+    // Skip the fetch and keep the list empty so we render the CTA banner below.
+    if (!user?.profile_completed) {
+      setLoading(false);
+      setCompanies([]);
+      setMyBids({});
+      return;
+    }
     const deptParam = user?.department ? `?department=${user.department}` : '';
     Promise.all([
       fetch(`/api/student/companies${deptParam}`, { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json()),
@@ -44,7 +52,7 @@ export default function CompaniesPage() {
       setMyBids(bidMap);
       setLoading(false);
     }).catch(() => setLoading(false));
-  }, [token, user?.department]);
+  }, [token, user?.department, user?.profile_completed]);
 
   async function handleBid(jobId, creditCost) {
     if (myBids[jobId]) {
@@ -162,17 +170,24 @@ export default function CompaniesPage() {
         </span>
       </div>
 
-      {!user?.profile_completed && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
-          <p className="text-amber-800 font-medium">Complete your profile to start bidding</p>
-          <p className="text-sm text-amber-700 mt-1">
-            You need to add your registration number, full name, department, and accept the data sharing consent before you can bid on positions.
+      {!user?.profile_completed ? (
+        <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
+          <div className="mx-auto w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center mb-3">
+            <HiDocumentText className="text-amber-600 text-2xl" />
+          </div>
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">Complete your profile to view job openings</h2>
+          <p className="text-sm text-gray-600 max-w-md mx-auto mb-4">
+            Company job listings become available once you add your registration number, full name,
+            department (and sub-specialization if required), and accept the data sharing consent.
           </p>
-          <a href="/student/profile" className="inline-block mt-2 text-sm font-medium text-primary-600 hover:underline">Go to My Profile →</a>
+          <a
+            href="/student/profile"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition"
+          >
+            Go to My Profile →
+          </a>
         </div>
-      )}
-
-      {companies.length === 0 ? (
+      ) : companies.length === 0 ? (
         <p className="text-gray-500 text-center py-12">No companies listed yet.</p>
       ) : (
         <>

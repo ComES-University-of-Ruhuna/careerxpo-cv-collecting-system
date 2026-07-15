@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import Company from '@/models/Company';
 import Job from '@/models/Job';
+import User from '@/models/User';
 import { cacheGetOrSet, CacheKeys, CacheTTL } from '@/lib/cache';
 import { requireAuth } from '@/lib/auth';
 
@@ -10,7 +11,23 @@ export async function GET(request) {
     // Authenticated students only. Company/job listings include internal
     // fields (credit_cost, max_applicants, deadlines) that must not leak
     // to unauthenticated clients.
-    requireAuth(request);
+    const decoded = requireAuth(request);
+
+    await dbConnect();
+    const currentUser = await User.findById(decoded.id).select('profile_completed');
+    if (!currentUser) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+    if (!currentUser.profile_completed) {
+      return NextResponse.json(
+        {
+          error: 'Please complete your profile before viewing job openings.',
+          profile_completed: false,
+          companies: [],
+        },
+        { status: 403 }
+      );
+    }
 
     const { searchParams } = new URL(request.url);
     const department = searchParams.get('department');
