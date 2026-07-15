@@ -12,6 +12,7 @@ const activityLogSchema = new mongoose.Schema({
       'credits_added',
       'guest_post_approved', 'guest_post_rejected',
       'payment_slip_approved', 'payment_slip_rejected', 'payment_slip_reset',
+      'payment_slip_uploads_enabled', 'payment_slip_uploads_disabled',
     ],
     required: true,
   },

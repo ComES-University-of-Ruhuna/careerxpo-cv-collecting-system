@@ -3,6 +3,7 @@ import dbConnect from '@/lib/db';
 import User from '@/models/User';
 import { authenticate } from '@/lib/auth';
 import { uploadPaymentSlipToDrive } from '@/lib/google-drive';
+import { getSettings } from '@/lib/settings';
 
 // Registration fee (LKR). Keep in sync with the amount shown in the UI.
 const REGISTRATION_FEE_LKR = 500;
@@ -65,6 +66,16 @@ export async function POST(request) {
   try {
     const decoded = authenticate(request);
     if (!decoded) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    // Respect the admin-controlled global toggle. If uploads are disabled,
+    // reject before doing any I/O.
+    const settings = await getSettings();
+    if (!settings.payment_slip_enabled) {
+      return NextResponse.json(
+        { error: 'Payment slip uploads are currently disabled by the administrators.' },
+        { status: 403 }
+      );
+    }
 
     await dbConnect();
     const user = await User.findById(decoded.id);

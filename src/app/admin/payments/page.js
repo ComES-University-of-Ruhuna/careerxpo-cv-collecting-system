@@ -39,6 +39,43 @@ export default function AdminPaymentsPage() {
   const [counts, setCounts] = useState({ pending: 0, verified: 0, rejected: 0 });
   const [loading, setLoading] = useState(false);
   const [updatingId, setUpdatingId] = useState(null);
+  // Global toggle — whether students see the payment slip upload section.
+  const [uploadsEnabled, setUploadsEnabled] = useState(true);
+  const [toggling, setToggling] = useState(false);
+
+  async function fetchSettings() {
+    if (!token) return;
+    try {
+      const res = await fetch('/api/admin/settings', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (res.ok) setUploadsEnabled(!!data.payment_slip_enabled);
+    } catch {}
+  }
+
+  async function toggleUploads(next) {
+    if (toggling) return;
+    setToggling(true);
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ payment_slip_enabled: next }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || 'Failed to update setting');
+        return;
+      }
+      setUploadsEnabled(!!data.payment_slip_enabled);
+      toast.success(next ? 'Payment slip uploads enabled for students' : 'Payment slip uploads disabled for students');
+    } catch {
+      toast.error('Failed to update setting');
+    } finally {
+      setToggling(false);
+    }
+  }
 
   async function fetchSubmissions() {
     if (!token) return;
@@ -68,6 +105,7 @@ export default function AdminPaymentsPage() {
 
   useEffect(() => {
     fetchSubmissions();
+    fetchSettings();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, status, department]);
 
@@ -134,6 +172,32 @@ export default function AdminPaymentsPage() {
         >
           <HiRefresh /> Refresh
         </button>
+      </div>
+
+      {/* Student-facing upload toggle */}
+      <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-gray-900">Student payment slip uploads</p>
+          <p className="text-xs text-gray-500 mt-0.5">
+            When disabled, students no longer see the &ldquo;Registration Fee&rdquo; section on their profile and cannot submit new slips. Existing submissions remain visible below.
+          </p>
+        </div>
+        <label className="inline-flex items-center gap-3 shrink-0 cursor-pointer select-none">
+          <span className={`text-xs font-medium ${uploadsEnabled ? 'text-emerald-600' : 'text-gray-400'}`}>
+            {uploadsEnabled ? 'Enabled' : 'Disabled'}
+          </span>
+          <span className="relative inline-flex">
+            <input
+              type="checkbox"
+              className="peer sr-only"
+              checked={uploadsEnabled}
+              disabled={toggling}
+              onChange={(e) => toggleUploads(e.target.checked)}
+            />
+            <span className="w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-emerald-500 transition-colors peer-disabled:opacity-60" />
+            <span className="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-5" />
+          </span>
+        </label>
       </div>
 
       {/* Status tabs */}

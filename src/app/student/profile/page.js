@@ -14,6 +14,8 @@ export default function ProfilePage() {
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [slipModalOpen, setSlipModalOpen] = useState(false);
+  // Admin can globally disable the payment slip upload flow.
+  const [paymentUploadsEnabled, setPaymentUploadsEnabled] = useState(true);
   const initialForm = {
     registration_no: '',
     full_name: '',
@@ -48,6 +50,20 @@ export default function ProfilePage() {
       setSavedForm(next);
     }
   }, [user]);
+
+  // Load the admin-controlled payment-slip toggle so we know whether to
+  // render the Registration Fee section at all.
+  useEffect(() => {
+    if (!token) return;
+    fetch('/api/settings', { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data && typeof data.payment_slip_enabled === 'boolean') {
+          setPaymentUploadsEnabled(data.payment_slip_enabled);
+        }
+      })
+      .catch(() => {});
+  }, [token]);
 
   async function handleSaveProfile(e) {
     e.preventDefault();
@@ -356,7 +372,10 @@ export default function ProfilePage() {
         </p>
       </div>
 
-      {/* Registration Fee — Bank Slip */}
+      {/* Registration Fee — Bank Slip. Hidden when admins disable uploads,
+          unless this student already has a submission on record (so they can
+          still see its status). */}
+      {(paymentUploadsEnabled || user?.payment_slip_url) && (
       <div className="bg-white rounded-xl border border-gray-200 p-6 mt-6">
         <div className="flex items-start gap-3 mb-4">
           <div className="p-2 bg-emerald-100 rounded-lg">
@@ -383,7 +402,7 @@ export default function ProfilePage() {
           <button
             type="button"
             onClick={() => setSlipModalOpen(true)}
-            disabled={!user?.registration_no}
+            disabled={!user?.registration_no || !paymentUploadsEnabled}
             className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <HiCash />
@@ -392,6 +411,11 @@ export default function ProfilePage() {
           {!user?.registration_no && (
             <p className="text-xs text-amber-600">
               Add your registration number above and save your profile first.
+            </p>
+          )}
+          {!paymentUploadsEnabled && (
+            <p className="text-xs text-amber-600">
+              Payment slip uploads are currently closed. Your submitted slip stays on record.
             </p>
           )}
           {user?.payment_slip_url && (
@@ -406,6 +430,7 @@ export default function ProfilePage() {
           )}
         </div>
       </div>
+      )}
 
       <PaymentSlipModal
         open={slipModalOpen}
