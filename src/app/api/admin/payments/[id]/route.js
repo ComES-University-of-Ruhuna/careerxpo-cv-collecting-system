@@ -50,9 +50,15 @@ export async function PATCH(request, { params }) {
     user.payment_slip_status = status;
     await user.save();
 
+    const actionKey =
+      status === 'verified'
+        ? 'payment_slip_approved'
+        : status === 'rejected'
+          ? 'payment_slip_rejected'
+          : 'payment_slip_reset';
     await logActivity(
       admin.id,
-      'payment_slip_status_updated',
+      actionKey,
       'student',
       id,
       `Payment slip for "${user.full_name || user.email}" (${user.registration_no || 'no reg'}) — ${previous} → ${status}`

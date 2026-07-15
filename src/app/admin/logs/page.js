@@ -12,11 +12,18 @@ const ACTION_LABELS = {
   job_created: { label: 'Job Created', color: 'bg-green-100 text-green-700' },
   job_updated: { label: 'Job Updated', color: 'bg-blue-100 text-blue-700' },
   job_deleted: { label: 'Job Deleted', color: 'bg-red-100 text-red-700' },
+  linkedin_job_created: { label: 'LinkedIn Job Created', color: 'bg-green-100 text-green-700' },
+  linkedin_job_updated: { label: 'LinkedIn Job Updated', color: 'bg-blue-100 text-blue-700' },
+  linkedin_job_deleted: { label: 'LinkedIn Job Deleted', color: 'bg-red-100 text-red-700' },
   student_bids_reset: { label: 'Bids Reset', color: 'bg-amber-100 text-amber-700' },
   student_deleted: { label: 'Student Deleted', color: 'bg-red-100 text-red-700' },
+  student_permissions_updated: { label: 'Permissions Updated', color: 'bg-indigo-100 text-indigo-700' },
   credits_added: { label: 'Credits Added', color: 'bg-purple-100 text-purple-700' },
   guest_post_approved: { label: 'Guest Post Approved', color: 'bg-teal-100 text-teal-700' },
   guest_post_rejected: { label: 'Guest Post Rejected', color: 'bg-orange-100 text-orange-700' },
+  payment_slip_approved: { label: 'Payment Approved', color: 'bg-emerald-100 text-emerald-700' },
+  payment_slip_rejected: { label: 'Payment Rejected', color: 'bg-rose-100 text-rose-700' },
+  payment_slip_reset: { label: 'Payment Reset', color: 'bg-slate-100 text-slate-700' },
 };
 
 const FILTER_OPTIONS = [
@@ -27,11 +34,17 @@ const FILTER_OPTIONS = [
   { value: 'job_created', label: 'Job Created' },
   { value: 'job_updated', label: 'Job Updated' },
   { value: 'job_deleted', label: 'Job Deleted' },
+  { value: 'linkedin_job_created', label: 'LinkedIn Job Created' },
+  { value: 'linkedin_job_updated', label: 'LinkedIn Job Updated' },
+  { value: 'linkedin_job_deleted', label: 'LinkedIn Job Deleted' },
   { value: 'student_bids_reset', label: 'Bids Reset' },
   { value: 'student_deleted', label: 'Student Deleted' },
+  { value: 'student_permissions_updated', label: 'Permissions Updated' },
   { value: 'credits_added', label: 'Credits Added' },
   { value: 'guest_post_approved', label: 'Guest Post Approved' },
   { value: 'guest_post_rejected', label: 'Guest Post Rejected' },
+  { value: 'payment_slip_approved', label: 'Payment Approved' },
+  { value: 'payment_slip_rejected', label: 'Payment Rejected' },
 ];
 
 export default function AdminLogs() {
