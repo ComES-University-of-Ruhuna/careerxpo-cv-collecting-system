@@ -21,6 +21,16 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const q = searchParams.get('q')?.trim();
 
+    // Users who have been granted any admin capability (e.g. lecturers with
+    // sub-admin permissions) are not "students" for the purposes of these
+    // listings. Exclude anyone whose admin_permissions array is non-empty.
+    const notLecturer = {
+      $or: [
+        { admin_permissions: { $exists: false } },
+        { admin_permissions: { $size: 0 } },
+      ],
+    };
+
     // Search mode — preserves the original behaviour used by the search bar.
     if (q) {
       if (q.length < 2) {
@@ -29,10 +39,15 @@ export async function GET(request) {
       const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const students = await User.find({
         role: 'student',
-        $or: [
-          { full_name: { $regex: escaped, $options: 'i' } },
-          { registration_no: { $regex: escaped, $options: 'i' } },
-          { email: { $regex: escaped, $options: 'i' } },
+        ...notLecturer,
+        $and: [
+          {
+            $or: [
+              { full_name: { $regex: escaped, $options: 'i' } },
+              { registration_no: { $regex: escaped, $options: 'i' } },
+              { email: { $regex: escaped, $options: 'i' } },
+            ],
+          },
         ],
       })
         .select('-password_hash')
@@ -48,7 +63,7 @@ export async function GET(request) {
     const limitRaw = Number(searchParams.get('limit') || 100);
     const limit = Math.max(1, Math.min(200, Number.isFinite(limitRaw) ? limitRaw : 100));
 
-    const filter = { role: 'student' };
+    const filter = { role: 'student', ...notLecturer };
     if (department) {
       if (!DEPARTMENT_VALUES.includes(department)) {
         return NextResponse.json({ error: 'Invalid department' }, { status: 400 });
