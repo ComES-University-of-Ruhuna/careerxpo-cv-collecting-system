@@ -11,6 +11,7 @@ export default function AdminCompanies() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({ name: '', logo: '', website: '' });
 
   useEffect(() => { loadCompanies(); }, [token]);
@@ -40,6 +41,7 @@ export default function AdminCompanies() {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    if (submitting) return;
     if (!form.name) {
       toast.error('Company name is required');
       return;
@@ -49,6 +51,7 @@ export default function AdminCompanies() {
     const url = editing ? `/api/admin/companies/${editing}` : '/api/admin/companies';
     const method = editing ? 'PUT' : 'POST';
 
+    setSubmitting(true);
     try {
       const res = await fetch(url, {
         method,
@@ -63,6 +66,8 @@ export default function AdminCompanies() {
       loadCompanies();
     } catch {
       toast.error('Operation failed');
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -115,8 +120,12 @@ export default function AdminCompanies() {
               <input value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" />
             </div>
             <div className="md:col-span-2">
-              <button type="submit" className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-medium text-sm">
-                {editing ? 'Update Company' : 'Create Company'}
+              <button
+                type="submit"
+                disabled={submitting}
+                className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-medium text-sm disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {submitting ? (editing ? 'Updating...' : 'Creating...') : editing ? 'Update Company' : 'Create Company'}
               </button>
             </div>
           </form>
