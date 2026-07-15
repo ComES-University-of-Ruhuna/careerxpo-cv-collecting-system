@@ -23,7 +23,7 @@ export const SUB_SPECIALIZATIONS = {
     'Electronics Engineering',
   ],
   DMME: ['Type A', 'Type B', 'Type C'],
-  DCEE: ['Type A', 'Type B', 'Type C'],
+  DCEE: [],
   DMENA: [],
 };
 
