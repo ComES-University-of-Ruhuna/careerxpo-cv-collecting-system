@@ -22,7 +22,7 @@ const MENU = [
         id: 'p-how-pay',
         label: 'How do I pay the registration fee?',
         answer:
-          'The one-time registration fee is LKR 500. Deposit it to our Bank of Ceylon account (details are on your Profile page) and use your registration number as the payment reference.',
+          'The one-time registration fee is LKR 500. Deposit it to the bank account (details are on your Profile page) and use your registration number as the payment reference.',
         link: { href: '/student/profile', label: 'Open Profile' },
       },
       {
@@ -36,7 +36,7 @@ const MENU = [
         id: 'p-bank-details',
         label: 'What are the bank details?',
         answer:
-          'Bank of Ceylon · Galle Fort branch · Account: CAREER GUIDANCE STUDENTS SOCIET · A/C No: 90179141.',
+          'Peoples bank · Kegalle Branch · Account: K.P.N. Deshapriya · A/C No: 027200160042754.',
       },
       {
         id: 'p-status',

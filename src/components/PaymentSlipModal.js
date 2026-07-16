@@ -12,10 +12,10 @@ export const REGISTRATION_FEE_LKR = 500;
 // Bank details shown to students when they submit their registration-fee slip.
 // Not secret — edit and redeploy to change.
 const BANK_DETAILS = {
-  bankName: 'Bank of Ceylon',
-  branch: 'Galle Fort',
-  accountName: 'CAREER GUIDANCE STUDENTS SOCIET',
-  accountNumber: '90179141',
+  bankName: 'Peoples bank',
+  branch: 'Kegalle Branch',
+  accountName: 'K.P.N. Deshapriya',
+  accountNumber: '027200160042754',
 };
 
 const ACCEPTED_TYPES = 'application/pdf,image/jpeg,image/jpg,image/png,image/webp';
