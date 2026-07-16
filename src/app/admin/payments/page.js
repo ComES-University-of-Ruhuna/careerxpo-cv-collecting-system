@@ -13,8 +13,10 @@ import {
   HiClock,
   HiCheckCircle,
   HiXCircle,
+  HiDownload,
 } from 'react-icons/hi';
 import { DEPARTMENTS } from '@/lib/departments';
+import ExportPaymentsModal from '@/components/ExportPaymentsModal';
 
 const STATUS_TABS = [
   { key: 'pending', label: 'Pending', icon: <HiClock /> },
@@ -44,6 +46,7 @@ export default function AdminPaymentsPage() {
   // Global toggle — whether students see the payment slip upload section.
   const [uploadsEnabled, setUploadsEnabled] = useState(true);
   const [toggling, setToggling] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
 
   async function fetchSettings() {
     if (!token) return;
@@ -169,13 +172,22 @@ export default function AdminPaymentsPage() {
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Payment Slips</h1>
-        <button
-          type="button"
-          onClick={fetchSubmissions}
-          className="inline-flex items-center gap-1.5 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
-        >
-          <HiRefresh /> Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setExportOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-primary-600 text-white border border-primary-600 rounded-lg text-sm hover:bg-primary-700"
+          >
+            <HiDownload /> Export
+          </button>
+          <button
+            type="button"
+            onClick={fetchSubmissions}
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
+          >
+            <HiRefresh /> Refresh
+          </button>
+        </div>
       </div>
 
       {/* Student-facing upload toggle */}
@@ -406,6 +418,12 @@ export default function AdminPaymentsPage() {
           </div>
         )}
       </div>
+
+      <ExportPaymentsModal
+        open={exportOpen}
+        onClose={() => setExportOpen(false)}
+        token={token}
+      />
     </div>
   );
 }
