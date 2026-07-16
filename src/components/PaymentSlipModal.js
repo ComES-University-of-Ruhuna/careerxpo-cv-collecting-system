@@ -26,7 +26,6 @@ export default function PaymentSlipModal({ open, onClose, token, user, onSuccess
   const [form, setForm] = useState({
     payer_name: user?.full_name || '',
     bank_name: '',
-    branch: '',
     deposit_date: new Date().toISOString().slice(0, 10),
     reference_no: user?.registration_no || '',
     amount: REGISTRATION_FEE_LKR,
@@ -79,7 +78,6 @@ export default function PaymentSlipModal({ open, onClose, token, user, onSuccess
     fd.append('slip', file);
     fd.append('payer_name', form.payer_name);
     fd.append('bank_name', form.bank_name);
-    fd.append('branch', form.branch);
     fd.append('deposit_date', form.deposit_date);
     fd.append('reference_no', form.reference_no);
     fd.append('amount', String(form.amount));
@@ -172,14 +170,6 @@ export default function PaymentSlipModal({ open, onClose, token, user, onSuccess
                   className="input"
                 />
               </Field>
-              <Field label="Branch">
-                <input
-                  type="text"
-                  value={form.branch}
-                  onChange={(e) => setForm({ ...form, branch: e.target.value })}
-                  className="input"
-                />
-              </Field>
               <Field label="Deposit Date *">
                 <input
                   type="date"
@@ -190,7 +180,7 @@ export default function PaymentSlipModal({ open, onClose, token, user, onSuccess
                   className="input"
                 />
               </Field>
-              <Field label="Reference / Slip No.">
+              <Field label="Receipt Slip No.">
                 <input
                   type="text"
                   value={form.reference_no}
