@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
-import { HiX, HiUpload, HiOutlineClipboardCopy, HiCheck } from 'react-icons/hi';
+import { HiX, HiUpload, HiOutlineClipboardCopy, HiCheck, HiExclamation } from 'react-icons/hi';
+import { getSubSpecializations } from '@/lib/departments';
 
 // Registration fee (LKR). Keep in sync with the API constant.
 export const REGISTRATION_FEE_LKR = 500;
@@ -19,14 +21,34 @@ const BANK_DETAILS = {
 const ACCEPTED_TYPES = 'application/pdf,image/jpeg,image/jpg,image/png,image/webp';
 const MAX_SIZE_BYTES = 5 * 1024 * 1024;
 
+// Mirrors the profile-completion rules enforced in /api/student/profile.
+// Returns a list of human-readable missing items so the modal can guide the user.
+function getMissingProfileFields(user) {
+  if (!user) return ['Profile details'];
+  const missing = [];
+  if (!user.registration_no) missing.push('Registration number');
+  if (!user.full_name) missing.push('Full name');
+  if (!user.department) missing.push('Department');
+  const subOptions = getSubSpecializations(user.department);
+  const currentSubs = Array.isArray(user.sub_specialization) ? user.sub_specialization : [];
+  if (subOptions.length > 0 && currentSubs.length === 0) {
+    missing.push('Sub-specialization');
+  }
+  if (!user.cv_consent) missing.push('CV sharing consent');
+  return missing;
+}
+
 export default function PaymentSlipModal({ open, onClose, token, user, onSuccess }) {
+  const router = useRouter();
   const [file, setFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [copied, setCopied] = useState('');
+  const [profileGate, setProfileGate] = useState({ open: false, missing: [] });
   const [form, setForm] = useState({
     payer_name: user?.full_name || '',
     bank_name: '',
     deposit_date: new Date().toISOString().slice(0, 10),
+    slip_no: '',
     reference_no: user?.registration_no || '',
     amount: REGISTRATION_FEE_LKR,
     notes: '',
@@ -64,6 +86,15 @@ export default function PaymentSlipModal({ open, onClose, token, user, onSuccess
 
   async function handleSubmit(e) {
     e.preventDefault();
+
+    // Block submission until the student has completed the required profile
+    // details. Show a nested modal listing what's missing so they can fix it.
+    const missing = getMissingProfileFields(user);
+    if (missing.length > 0) {
+      setProfileGate({ open: true, missing });
+      return;
+    }
+
     if (!file) {
       toast.error('Please attach your bank slip.');
       return;
@@ -79,6 +110,7 @@ export default function PaymentSlipModal({ open, onClose, token, user, onSuccess
     fd.append('payer_name', form.payer_name);
     fd.append('bank_name', form.bank_name);
     fd.append('deposit_date', form.deposit_date);
+    fd.append('slip_no', form.slip_no);
     fd.append('reference_no', form.reference_no);
     fd.append('amount', String(form.amount));
     fd.append('notes', form.notes);
@@ -183,8 +215,18 @@ export default function PaymentSlipModal({ open, onClose, token, user, onSuccess
               <Field label="Receipt Slip No.">
                 <input
                   type="text"
+                  value={form.slip_no}
+                  onChange={(e) => setForm({ ...form, slip_no: e.target.value })}
+                  placeholder="Printed on the bank receipt"
+                  className="input"
+                />
+              </Field>
+              <Field label="Reference No.">
+                <input
+                  type="text"
                   value={form.reference_no}
                   onChange={(e) => setForm({ ...form, reference_no: e.target.value })}
+                  placeholder="Usually your registration number"
                   className="input"
                 />
               </Field>
@@ -262,6 +304,54 @@ export default function PaymentSlipModal({ open, onClose, token, user, onSuccess
           box-shadow: 0 0 0 2px rgb(99 102 241 / 0.2);
         }
       `}</style>
+
+      {profileGate.open && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/60"
+            onClick={() => setProfileGate({ open: false, missing: [] })}
+          />
+          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+            <div className="flex items-start gap-3">
+              <div className="shrink-0 p-2 bg-amber-100 rounded-lg">
+                <HiExclamation className="text-amber-600 text-2xl" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-base font-semibold text-gray-900">Complete your profile first</h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  Please complete the following profile details before submitting your bank slip:
+                </p>
+                <ul className="mt-3 list-disc list-inside text-sm text-gray-700 space-y-1">
+                  {profileGate.missing.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            <div className="mt-5 flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setProfileGate({ open: false, missing: [] })}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setProfileGate({ open: false, missing: [] });
+                  onClose?.();
+                  router.push('/student/profile');
+                }}
+                className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700"
+              >
+                Go to Profile
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

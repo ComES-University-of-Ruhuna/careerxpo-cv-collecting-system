@@ -159,7 +159,7 @@ export default function AdminPaymentsPage() {
     if (!query.trim()) return submissions;
     const q = query.toLowerCase();
     return submissions.filter((s) =>
-      [s.full_name, s.registration_no, s.email, s.payment_details?.reference_no, s.payment_details?.bank_name]
+      [s.full_name, s.registration_no, s.email, s.payment_details?.slip_no, s.payment_details?.reference_no, s.payment_details?.bank_name]
         .filter(Boolean)
         .some((v) => String(v).toLowerCase().includes(q))
     );
@@ -350,7 +350,7 @@ export default function AdminPaymentsPage() {
                       <td className="px-4 py-3">
                         <p className="text-gray-900">{d.bank_name || '—'}</p>
                         <p className="text-xs text-gray-500 truncate max-w-[160px]">
-                          {d.branch ? `${d.branch} · ` : ''}Ref: {d.reference_no || '—'}
+                          {d.branch ? `${d.branch} · ` : ''}Slip: {d.slip_no || '—'} · Ref: {d.reference_no || '—'}
                         </p>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-gray-700">{depositAt}</td>

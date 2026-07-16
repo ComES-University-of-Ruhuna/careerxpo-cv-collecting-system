@@ -35,6 +35,7 @@ export default function PaymentSlipModal({ visible, onClose, token, user, onSucc
     bank_name: '',
     branch: '',
     deposit_date: new Date().toISOString().slice(0, 10),
+    slip_no: '',
     reference_no: user?.registration_no || '',
     notes: '',
   }));
@@ -47,6 +48,7 @@ export default function PaymentSlipModal({ visible, onClose, token, user, onSucc
       bank_name: '',
       branch: '',
       deposit_date: new Date().toISOString().slice(0, 10),
+      slip_no: '',
       reference_no: user?.registration_no || '',
       notes: '',
     });
@@ -103,6 +105,7 @@ export default function PaymentSlipModal({ visible, onClose, token, user, onSucc
       fd.append('bank_name', form.bank_name.trim());
       fd.append('branch', form.branch.trim());
       fd.append('deposit_date', form.deposit_date);
+      fd.append('slip_no', form.slip_no.trim());
       fd.append('reference_no', form.reference_no.trim());
       fd.append('amount', String(REGISTRATION_FEE_LKR));
       fd.append('notes', form.notes.trim());
@@ -184,11 +187,20 @@ export default function PaymentSlipModal({ visible, onClose, token, user, onSucc
                 autoCapitalize="none"
               />
             </Field>
-            <Field label="Reference / Slip No.">
+            <Field label="Receipt Slip No.">
+              <TextInput
+                style={styles.input}
+                value={form.slip_no}
+                onChangeText={(v) => setForm({ ...form, slip_no: v })}
+                placeholder="Printed on the bank receipt"
+              />
+            </Field>
+            <Field label="Reference No.">
               <TextInput
                 style={styles.input}
                 value={form.reference_no}
                 onChangeText={(v) => setForm({ ...form, reference_no: v })}
+                placeholder="Usually your registration number"
               />
             </Field>
             <Field label="Amount (LKR)">

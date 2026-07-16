@@ -56,6 +56,7 @@ const UserSchema = new mongoose.Schema({
     bank_name: { type: String, default: '' },
     branch: { type: String, default: '' },
     deposit_date: { type: Date, default: null },
+    slip_no: { type: String, default: '' },
     reference_no: { type: String, default: '' },
     amount: { type: Number, default: 0 },
     notes: { type: String, default: '' },

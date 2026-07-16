@@ -94,6 +94,7 @@ export async function POST(request) {
     const bankName = (formData.get('bank_name') || '').toString().trim();
     const branch = (formData.get('branch') || '').toString().trim();
     const depositDateRaw = (formData.get('deposit_date') || '').toString().trim();
+    const slipNo = (formData.get('slip_no') || '').toString().trim();
     const referenceNo = (formData.get('reference_no') || '').toString().trim();
     const amountRaw = (formData.get('amount') || '').toString().trim();
     const notes = (formData.get('notes') || '').toString().trim();
@@ -156,6 +157,7 @@ export async function POST(request) {
       bank_name: bankName,
       branch,
       deposit_date: depositDate,
+      slip_no: slipNo,
       reference_no: referenceNo,
       amount,
       notes,
