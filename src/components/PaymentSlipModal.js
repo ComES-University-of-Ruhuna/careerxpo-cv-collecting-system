@@ -7,13 +7,13 @@ import { HiX, HiUpload, HiOutlineClipboardCopy, HiCheck } from 'react-icons/hi';
 // Registration fee (LKR). Keep in sync with the API constant.
 export const REGISTRATION_FEE_LKR = 500;
 
-// Bank details displayed to the student. Update these to match your account.
-// Values can be overridden per environment via NEXT_PUBLIC_BANK_* variables.
+// Bank details shown to students when they submit their registration-fee slip.
+// Not secret — edit and redeploy to change.
 const BANK_DETAILS = {
-  bankName: process.env.NEXT_PUBLIC_BANK_NAME || '[Bank Name]',
-  branch: process.env.NEXT_PUBLIC_BANK_BRANCH || '[Branch]',
-  accountName: process.env.NEXT_PUBLIC_BANK_ACCOUNT_NAME || 'CareerXpo',
-  accountNumber: process.env.NEXT_PUBLIC_BANK_ACCOUNT_NUMBER || '[Account Number]',
+  bankName: 'Bank of Ceylon',
+  branch: 'Galle Fort',
+  accountName: 'CAREER GUIDANCE STUDENTS SOCIET',
+  accountNumber: '90179141',
 };
 
 const ACCEPTED_TYPES = 'application/pdf,image/jpeg,image/jpg,image/png,image/webp';
