@@ -385,7 +385,7 @@ export default function ProfilePage() {
             <h2 className="font-semibold text-gray-900">Registration Fee</h2>
             <p className="text-sm text-gray-500">
               A one-time registration fee of <span className="font-semibold text-gray-800">LKR 500</span> is required.
-              Deposit the fee to our bank account and upload the slip below. Please include your registration number
+              Deposit the fee to the bank account and upload the slip below. Please include your registration number
               {user?.registration_no ? (
                 <span className="font-semibold"> ({user.registration_no}) </span>
               ) : (
