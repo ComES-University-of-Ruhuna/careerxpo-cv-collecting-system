@@ -35,6 +35,8 @@ export default function AdminPaymentsPage() {
   const [status, setStatus] = useState('pending');
   const [department, setDepartment] = useState('');
   const [query, setQuery] = useState('');
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
   const [submissions, setSubmissions] = useState([]);
   const [counts, setCounts] = useState({ pending: 0, verified: 0, rejected: 0 });
   const [loading, setLoading] = useState(false);
@@ -84,6 +86,8 @@ export default function AdminPaymentsPage() {
       const params = new URLSearchParams();
       params.set('status', status);
       if (department) params.set('department', department);
+      if (fromDate) params.set('from', fromDate);
+      if (toDate) params.set('to', toDate);
       if (query.trim().length >= 2) params.set('q', query.trim());
       const res = await fetch(`/api/admin/payments?${params.toString()}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -107,7 +111,7 @@ export default function AdminPaymentsPage() {
     fetchSubmissions();
     fetchSettings();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, status, department]);
+  }, [token, status, department, fromDate, toDate]);
 
   async function updateStatus(id, nextStatus) {
     setUpdatingId(id);
@@ -232,29 +236,63 @@ export default function AdminPaymentsPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-2 mb-4">
-        <div className="relative flex-1">
-          <HiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by name, registration no, email, or reference..."
-            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
-          />
+      <div className="flex flex-col gap-2 mb-4">
+        <div className="flex flex-col sm:flex-row gap-2">
+          <div className="relative flex-1">
+            <HiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search by name, registration no, email, or reference..."
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
+            />
+          </div>
+          <select
+            value={department}
+            onChange={(e) => setDepartment(e.target.value)}
+            className="px-3 py-2.5 border border-gray-300 rounded-lg text-sm bg-white"
+          >
+            <option value="">All departments</option>
+            {DEPARTMENTS.map((d) => (
+              <option key={d.value} value={d.value}>
+                {d.value}
+              </option>
+            ))}
+          </select>
         </div>
-        <select
-          value={department}
-          onChange={(e) => setDepartment(e.target.value)}
-          className="px-3 py-2.5 border border-gray-300 rounded-lg text-sm bg-white"
-        >
-          <option value="">All departments</option>
-          {DEPARTMENTS.map((d) => (
-            <option key={d.value} value={d.value}>
-              {d.value}
-            </option>
-          ))}
-        </select>
+
+        <div className="flex flex-col sm:flex-row sm:items-end gap-2">
+          <label className="text-xs text-gray-600 flex flex-col gap-1">
+            <span>Submitted from</span>
+            <input
+              type="date"
+              value={fromDate}
+              max={toDate || undefined}
+              onChange={(e) => setFromDate(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
+            />
+          </label>
+          <label className="text-xs text-gray-600 flex flex-col gap-1">
+            <span>Submitted to</span>
+            <input
+              type="date"
+              value={toDate}
+              min={fromDate || undefined}
+              onChange={(e) => setToDate(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
+            />
+          </label>
+          {(fromDate || toDate) && (
+            <button
+              type="button"
+              onClick={() => { setFromDate(''); setToDate(''); }}
+              className="text-xs px-3 py-2 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 self-start sm:self-auto"
+            >
+              Clear dates
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Table */}

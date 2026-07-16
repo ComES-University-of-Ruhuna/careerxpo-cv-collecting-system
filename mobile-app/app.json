@@ -30,9 +30,9 @@
     },
     "extra": {
       "apiBaseUrl": "https://careerxpo.comesuor.lk",
-      "googleWebClientId": "REPLACE_WITH_GOOGLE_WEB_CLIENT_ID",
+      "googleWebClientId": "402440270472-fc4isojan38bp95sgr28n1bemegc7kvp.apps.googleusercontent.com",
       "googleIosClientId": "REPLACE_WITH_GOOGLE_IOS_CLIENT_ID",
-      "googleAndroidClientId": "REPLACE_WITH_GOOGLE_ANDROID_CLIENT_ID",
+      "googleAndroidClientId": "402440270472-4mpa7bku92166r17e46jph32rerbcjbt.apps.googleusercontent.com",
       "bankName": "",
       "bankBranch": "",
       "bankAccountName": "CareerXpo",

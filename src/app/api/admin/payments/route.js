@@ -11,6 +11,8 @@ const VALID_STATUSES = ['pending', 'verified', 'rejected'];
 //   status=pending|verified|rejected|all (default: all submitted)
 //   department=DEIE|... (optional)
 //   q=<name|reg_no|email>
+//   from=YYYY-MM-DD  (submissions on or after 00:00 local time)
+//   to=YYYY-MM-DD    (submissions on or before 23:59:59.999 local time)
 //   limit=<int> (default 100, max 500)
 export async function GET(request) {
   try {
@@ -21,6 +23,8 @@ export async function GET(request) {
     const status = (searchParams.get('status') || '').trim();
     const department = (searchParams.get('department') || '').trim();
     const q = (searchParams.get('q') || '').trim();
+    const fromRaw = (searchParams.get('from') || '').trim();
+    const toRaw = (searchParams.get('to') || '').trim();
     const limitRaw = Number(searchParams.get('limit') || 100);
     const limit = Math.max(1, Math.min(500, Number.isFinite(limitRaw) ? limitRaw : 100));
 
@@ -41,6 +45,33 @@ export async function GET(request) {
         return NextResponse.json({ error: 'Invalid department' }, { status: 400 });
       }
       filter.department = department;
+    }
+
+    // Date range on payment_slip_uploaded_at. Interpret each date in the
+    // server's local timezone so `from` covers the whole start day and `to`
+    // covers the whole end day.
+    const dateFilter = {};
+    if (fromRaw) {
+      const from = new Date(fromRaw);
+      if (Number.isNaN(from.getTime())) {
+        return NextResponse.json({ error: 'Invalid "from" date' }, { status: 400 });
+      }
+      from.setHours(0, 0, 0, 0);
+      dateFilter.$gte = from;
+    }
+    if (toRaw) {
+      const to = new Date(toRaw);
+      if (Number.isNaN(to.getTime())) {
+        return NextResponse.json({ error: 'Invalid "to" date' }, { status: 400 });
+      }
+      to.setHours(23, 59, 59, 999);
+      dateFilter.$lte = to;
+    }
+    if (dateFilter.$gte && dateFilter.$lte && dateFilter.$gte > dateFilter.$lte) {
+      return NextResponse.json({ error: '"from" date must be before "to" date' }, { status: 400 });
+    }
+    if (Object.keys(dateFilter).length > 0) {
+      filter.payment_slip_uploaded_at = dateFilter;
     }
 
     if (q && q.length >= 2) {
