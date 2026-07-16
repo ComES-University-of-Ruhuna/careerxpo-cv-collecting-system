@@ -4,6 +4,7 @@ import { useAuth } from '@/components/AuthProvider';
 import Navbar from '@/components/Navbar';
 import Sidebar from '@/components/Sidebar';
 import Footer from '@/components/Footer';
+import StudentChatbot from '@/components/StudentChatbot';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { HiHome, HiOfficeBuilding, HiUser, HiGlobeAlt } from 'react-icons/hi';
@@ -43,6 +44,7 @@ function StudentGuard({ children }) {
         <main className="flex-1 p-4 sm:p-6 md:p-8">{children}</main>
       </div>
       <Footer />
+      <StudentChatbot />
     </div>
   );
 }
