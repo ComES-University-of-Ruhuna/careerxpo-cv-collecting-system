@@ -30,9 +30,10 @@ export default function CompaniesPage() {
 
   useEffect(() => {
     if (!token) return;
-    // Job openings are only accessible once the student's profile is complete.
-    // Skip the fetch and keep the list empty so we render the CTA banner below.
-    if (!user?.profile_completed) {
+    // Job openings are only accessible once the student's profile is complete
+    // AND they have submitted their registration-fee bank slip. Skip the fetch
+    // in either case so we render the appropriate CTA banner below.
+    if (!user?.profile_completed || !user?.payment_slip_url) {
       setLoading(false);
       setCompanies([]);
       setMyBids({});
@@ -52,7 +53,7 @@ export default function CompaniesPage() {
       setMyBids(bidMap);
       setLoading(false);
     }).catch(() => setLoading(false));
-  }, [token, user?.department, user?.profile_completed]);
+  }, [token, user?.department, user?.profile_completed, user?.payment_slip_url]);
 
   async function handleBid(jobId, creditCost) {
     if (myBids[jobId]) {
@@ -187,10 +188,40 @@ export default function CompaniesPage() {
             Go to My Profile →
           </a>
         </div>
+      ) : !user?.payment_slip_url ? (
+        <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
+          <div className="mx-auto w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center mb-3">
+            <HiCurrencyDollar className="text-amber-600 text-2xl" />
+          </div>
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">Submit your registration-fee bank slip</h2>
+          <p className="text-sm text-gray-600 max-w-md mx-auto mb-4">
+            Published vacancies unlock as soon as you submit your bank slip. You&apos;ll be able to apply once your payment is verified — we&apos;ll email you at that point.
+          </p>
+          <a
+            href="/student/profile"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition"
+          >
+            Submit Bank Slip →
+          </a>
+        </div>
       ) : companies.length === 0 ? (
         <p className="text-gray-500 text-center py-12">No companies listed yet.</p>
       ) : (
         <>
+        {user?.payment_slip_status !== 'verified' && (
+          <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
+            <p className="font-medium">
+              {user?.payment_slip_status === 'rejected'
+                ? 'Your payment slip was rejected.'
+                : 'Payment awaiting verification.'}
+            </p>
+            <p className="mt-1 text-blue-700">
+              {user?.payment_slip_status === 'rejected'
+                ? 'You can browse vacancies, but you\u2019ll need to re-submit your bank slip and wait for verification before applying.'
+                : 'You can browse published vacancies below. Applying will be enabled as soon as your payment is verified \u2014 we\u2019ll email you.'}
+            </p>
+          </div>
+        )}
         <div className="relative mb-4">
           <HiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input

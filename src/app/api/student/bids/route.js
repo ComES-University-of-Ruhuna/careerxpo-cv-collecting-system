@@ -45,6 +45,15 @@ export async function POST(request) {
     if (!user.profile_completed) {
       return NextResponse.json({ error: 'Please complete your profile before bidding. Go to My Profile to add your registration number, name, department, and accept the data sharing consent.' }, { status: 403 });
     }
+    if (user.payment_slip_status !== 'verified') {
+      const msg =
+        !user.payment_slip_url
+          ? 'Please submit your registration-fee bank slip before applying for positions.'
+          : user.payment_slip_status === 'rejected'
+            ? 'Your payment slip was rejected. Please re-submit before applying for positions.'
+            : 'Your payment must be verified before you can apply for positions. You will receive an email once your payment is verified.';
+      return NextResponse.json({ error: msg }, { status: 403 });
+    }
     if (!cv_drive_id || !cv_url) {
       return NextResponse.json({ error: 'Please upload your CV for this position before bidding.' }, { status: 400 });
     }

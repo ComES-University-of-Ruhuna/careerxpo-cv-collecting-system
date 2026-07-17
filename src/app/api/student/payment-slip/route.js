@@ -4,6 +4,7 @@ import User from '@/models/User';
 import { authenticate } from '@/lib/auth';
 import { uploadPaymentSlipToDrive } from '@/lib/google-drive';
 import { getSettings } from '@/lib/settings';
+import { sendPaymentSlipReceivedEmail } from '@/lib/email';
 
 // Registration fee (LKR). Keep in sync with the amount shown in the UI.
 const REGISTRATION_FEE_LKR = 500;
@@ -163,6 +164,21 @@ export async function POST(request) {
       notes,
     };
     await user.save();
+
+    // Best-effort confirmation email. Failures here should not block the
+    // student's successful submission response.
+    if (user.email) {
+      sendPaymentSlipReceivedEmail({
+        to: user.email,
+        studentName: user.full_name,
+        registrationNo: user.registration_no,
+        amount,
+        referenceNo,
+        uploadedAt: user.payment_slip_uploaded_at,
+      }).catch((err) => {
+        console.error('Failed to send payment slip received email:', err?.message || err);
+      });
+    }
 
     return NextResponse.json({
       message: 'Bank slip submitted successfully. Your payment is pending verification.',

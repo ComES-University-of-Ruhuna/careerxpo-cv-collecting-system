@@ -14,7 +14,9 @@ export async function GET(request) {
     const decoded = requireAuth(request);
 
     await dbConnect();
-    const currentUser = await User.findById(decoded.id).select('profile_completed');
+    const currentUser = await User.findById(decoded.id).select(
+      'profile_completed payment_slip_url payment_slip_status'
+    );
     if (!currentUser) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
@@ -23,6 +25,18 @@ export async function GET(request) {
         {
           error: 'Please complete your profile before viewing job openings.',
           profile_completed: false,
+          companies: [],
+        },
+        { status: 403 }
+      );
+    }
+    // Vacancies are visible once a bank slip has been submitted — verification
+    // is only required later at bid time.
+    if (!currentUser.payment_slip_url) {
+      return NextResponse.json(
+        {
+          error: 'Please submit your registration-fee bank slip to view published vacancies.',
+          payment_submitted: false,
           companies: [],
         },
         { status: 403 }

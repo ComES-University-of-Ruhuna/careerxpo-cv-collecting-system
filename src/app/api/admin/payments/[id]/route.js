@@ -3,6 +3,7 @@ import dbConnect from '@/lib/db';
 import User from '@/models/User';
 import { requirePermission, isValidObjectId, ADMIN_PERMISSIONS } from '@/lib/auth';
 import { logActivity } from '@/lib/activity-log';
+import { sendPaymentVerifiedEmail } from '@/lib/email';
 
 const VALID_STATUSES = ['pending', 'verified', 'rejected'];
 
@@ -63,6 +64,17 @@ export async function PATCH(request, { params }) {
       id,
       `Payment slip for "${user.full_name || user.email}" (${user.registration_no || 'no reg'}) — ${previous} → ${status}`
     );
+
+    // Notify the student when their payment transitions to verified.
+    if (status === 'verified' && previous !== 'verified' && user.email) {
+      sendPaymentVerifiedEmail({
+        to: user.email,
+        studentName: user.full_name,
+        registrationNo: user.registration_no,
+      }).catch((err) => {
+        console.error('Failed to send payment verified email:', err?.message || err);
+      });
+    }
 
     return NextResponse.json({
       message: 'Payment status updated',

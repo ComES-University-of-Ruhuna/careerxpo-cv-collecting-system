@@ -156,3 +156,101 @@ export async function sendJobAlertEmails({ recipients, jobTitle, companyName, cr
     );
   }
 }
+
+/**
+ * Send a confirmation email when a student submits their registration-fee
+ * bank slip. This is best-effort — the caller should not await it in a way
+ * that blocks the HTTP response.
+ */
+export async function sendPaymentSlipReceivedEmail({ to, studentName, registrationNo, amount, referenceNo, uploadedAt }) {
+  if (!process.env.SMTP_HOST) {
+    console.warn('SMTP not configured — skipping payment slip received email');
+    return;
+  }
+
+  const submittedText = uploadedAt
+    ? new Date(uploadedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+    : new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <div style="background: #1e40af; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
+        <h1 style="margin: 0; font-size: 24px;">CareerXpo</h1>
+        <p style="margin: 5px 0 0; opacity: 0.9;">Faculty of Engineering, University of Ruhuna</p>
+      </div>
+      <div style="background: #f9fafb; padding: 24px; border: 1px solid #e5e7eb; border-top: none;">
+        <h2 style="color: #1e40af; margin-top: 0;">Payment Slip Received</h2>
+        <p>Hi <strong>${studentName || 'there'}</strong>,</p>
+        <p>We have received your registration-fee bank slip. Our team will review it shortly and update your account status.</p>
+        <div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin: 16px 0;">
+          <p style="margin: 0 0 8px; color: #6b7280;">Registration No: <strong style="color: #111827;">${registrationNo || '—'}</strong></p>
+          <p style="margin: 0 0 8px; color: #6b7280;">Reference No: <strong style="color: #111827;">${referenceNo || '—'}</strong></p>
+          <p style="margin: 0 0 8px; color: #6b7280;">Amount: <strong style="color: #111827;">LKR ${amount ?? '—'}</strong></p>
+          <p style="margin: 0; color: #6b7280;">Submitted: <strong style="color: #111827;">${submittedText}</strong></p>
+        </div>
+        <p>You can already browse published vacancies from the Companies section. You will be able to apply once your payment is verified — we&apos;ll email you as soon as that happens.</p>
+        <div style="text-align: center; margin: 24px 0;">
+          <a href="${process.env.NEXT_PUBLIC_BASE_URL || 'https://careerxpo.comesuor.lk'}/student/companies" style="display: inline-block; background: #1e40af; color: white; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: bold;">
+            Browse Vacancies
+          </a>
+        </div>
+        <p style="color: #6b7280; font-size: 14px; margin-top: 24px;">
+          If you did not submit this slip, please contact the Career Fair organizers immediately.
+        </p>
+      </div>
+      <div style="text-align: center; padding: 16px; color: #9ca3af; font-size: 12px;">
+        &copy; ${new Date().getFullYear()} CareerXpo — Career Fair CV Collection &amp; Bidding System
+      </div>
+    </div>
+  `;
+
+  await getTransporter().sendMail({
+    from: `"CareerXpo" <${FROM_ADDRESS}>`,
+    to,
+    subject: 'CareerXpo — Payment slip received',
+    html,
+  });
+}
+
+/**
+ * Send a confirmation email when an admin verifies a student's payment.
+ */
+export async function sendPaymentVerifiedEmail({ to, studentName, registrationNo }) {
+  if (!process.env.SMTP_HOST) {
+    console.warn('SMTP not configured — skipping payment verified email');
+    return;
+  }
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <div style="background: #065f46; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
+        <h1 style="margin: 0; font-size: 24px;">CareerXpo</h1>
+        <p style="margin: 5px 0 0; opacity: 0.9;">Faculty of Engineering, University of Ruhuna</p>
+      </div>
+      <div style="background: #f9fafb; padding: 24px; border: 1px solid #e5e7eb; border-top: none;">
+        <h2 style="color: #065f46; margin-top: 0;">Payment Verified — You&apos;re All Set!</h2>
+        <p>Hi <strong>${studentName || 'there'}</strong>,</p>
+        <p>Good news! Your registration-fee payment${registrationNo ? ` for <strong>${registrationNo}</strong>` : ''} has been verified.</p>
+        <p>You can now apply for published vacancies through the CareerXpo system — upload your CV and place bids on the positions that interest you.</p>
+        <div style="text-align: center; margin: 24px 0;">
+          <a href="${process.env.NEXT_PUBLIC_BASE_URL || 'https://careerxpo.comesuor.lk'}/student/companies" style="display: inline-block; background: #065f46; color: white; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: bold;">
+            Apply for Vacancies
+          </a>
+        </div>
+        <p style="color: #6b7280; font-size: 14px; margin-top: 24px;">
+          If this wasn&apos;t expected, please contact the Career Fair organizers.
+        </p>
+      </div>
+      <div style="text-align: center; padding: 16px; color: #9ca3af; font-size: 12px;">
+        &copy; ${new Date().getFullYear()} CareerXpo — Career Fair CV Collection &amp; Bidding System
+      </div>
+    </div>
+  `;
+
+  await getTransporter().sendMail({
+    from: `"CareerXpo" <${FROM_ADDRESS}>`,
+    to,
+    subject: 'CareerXpo — Payment verified: you can now apply',
+    html,
+  });
+}
