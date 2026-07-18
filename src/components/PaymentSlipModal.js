@@ -11,7 +11,7 @@ export const REGISTRATION_FEE_LKR = 500;
 
 // Bank details shown to students when they submit their registration-fee slip.
 // Not secret — edit and redeploy to change.
-const BANK_DETAILS = {
+export const BANK_DETAILS = {
   bankName: 'Peoples bank',
   branch: 'Kegalle Branch',
   accountName: 'K.P.N. Deshapriya',
@@ -365,7 +365,7 @@ function Field({ label, children }) {
   );
 }
 
-function BankRow({ label, value, onCopy, copied }) {
+export function BankRow({ label, value, onCopy, copied }) {
   return (
     <div className="flex items-center justify-between gap-3">
       <div className="flex gap-2 min-w-0">

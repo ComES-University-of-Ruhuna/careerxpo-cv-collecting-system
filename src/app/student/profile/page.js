@@ -6,13 +6,22 @@ import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { HiUpload, HiDocumentText, HiPencil, HiCheck, HiCash, HiCheckCircle, HiClock, HiXCircle } from 'react-icons/hi';
 import { DEPARTMENTS, getSubSpecializations } from '@/lib/departments';
-import PaymentSlipModal from '@/components/PaymentSlipModal';
+import PaymentSlipModal, { BANK_DETAILS, BankRow } from '@/components/PaymentSlipModal';
 
 export default function ProfilePage() {
   const { user, token, updateUser } = useAuth();
   const router = useRouter();
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [copiedBank, setCopiedBank] = useState('');
+
+  function copyBankValue(text, key) {
+    if (typeof navigator === 'undefined' || !navigator.clipboard) return;
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedBank(key);
+      setTimeout(() => setCopiedBank(''), 1500);
+    });
+  }
   const [slipModalOpen, setSlipModalOpen] = useState(false);
   // Admin can globally disable the payment slip upload flow.
   const [paymentUploadsEnabled, setPaymentUploadsEnabled] = useState(true);
@@ -69,11 +78,22 @@ export default function ProfilePage() {
     e.preventDefault();
     setSaving(true);
 
+    // Accept LinkedIn URLs without a scheme (e.g. "linkedin.com/in/foo")
+    // by prepending https:// on submit. Empty values are left alone so the
+    // field remains optional.
+    const payload = { ...form };
+    const raw = (payload.linkedin || '').trim();
+    if (raw && !/^https?:\/\//i.test(raw)) {
+      payload.linkedin = `https://${raw.replace(/^\/+/, '')}`;
+    } else {
+      payload.linkedin = raw;
+    }
+
     try {
       const res = await fetch('/api/student/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
 
@@ -84,7 +104,7 @@ export default function ProfilePage() {
 
       toast.success('Profile updated successfully!');
       updateUser(data.user);
-      setSavedForm(form);
+      setSavedForm({ ...form, linkedin: payload.linkedin });
 
       const justActivated = !user?.profile_completed && data.user?.profile_completed;
       if (justActivated) {
@@ -272,12 +292,14 @@ export default function ProfilePage() {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">LinkedIn Profile</label>
           <input
-            type="url"
+            type="text"
+            inputMode="url"
             value={form.linkedin}
             onChange={(e) => setForm({ ...form, linkedin: e.target.value })}
-            placeholder="https://linkedin.com/in/yourprofile"
+            placeholder="linkedin.com/in/yourprofile"
             className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition"
           />
+          <p className="text-xs text-gray-400 mt-1">You can paste it with or without <span className="font-mono">https://</span>.</p>
         </div>
 
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
@@ -397,6 +419,47 @@ export default function ProfilePage() {
         </div>
 
         <SlipStatusBanner status={user?.payment_slip_status || 'none'} uploaded={!!user?.payment_slip_url} user={user} />
+
+        {/* Bank details are shown here (in addition to inside the modal) so
+            students can copy them without having to open the submission form. */}
+        <div className="mt-4 bg-gray-50 border border-gray-200 rounded-lg p-4">
+          <p className="text-sm font-semibold text-gray-800 mb-2">Bank Details</p>
+          <dl className="text-sm text-gray-700 space-y-1.5">
+            <BankRow
+              label="Bank"
+              value={BANK_DETAILS.bankName}
+              onCopy={() => copyBankValue(BANK_DETAILS.bankName, 'bank')}
+              copied={copiedBank === 'bank'}
+            />
+            <BankRow
+              label="Branch"
+              value={BANK_DETAILS.branch}
+              onCopy={() => copyBankValue(BANK_DETAILS.branch, 'branch')}
+              copied={copiedBank === 'branch'}
+            />
+            <BankRow
+              label="Account Name"
+              value={BANK_DETAILS.accountName}
+              onCopy={() => copyBankValue(BANK_DETAILS.accountName, 'name')}
+              copied={copiedBank === 'name'}
+            />
+            <BankRow
+              label="Account No."
+              value={BANK_DETAILS.accountNumber}
+              onCopy={() => copyBankValue(BANK_DETAILS.accountNumber, 'acc')}
+              copied={copiedBank === 'acc'}
+            />
+            <BankRow
+              label="Reference"
+              value={user?.registration_no || '—'}
+              onCopy={() => user?.registration_no && copyBankValue(user.registration_no, 'ref')}
+              copied={copiedBank === 'ref'}
+            />
+          </dl>
+          <p className="text-xs text-gray-500 mt-3">
+            Include your registration number in the payment reference so we can match your slip.
+          </p>
+        </div>
 
         <div className="mt-4 flex flex-col sm:flex-row gap-2 sm:items-center">
           <button
