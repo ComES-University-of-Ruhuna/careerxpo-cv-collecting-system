@@ -34,10 +34,11 @@ export default function Sidebar({ links }) {
 
   return (
     <>
-      {/* Mobile menu button */}
+      {/* Mobile menu button — pinned bottom-left so it doesn't overlap the
+          bottom-right floating chatbot button on student pages. */}
       <button
         onClick={() => setOpen(true)}
-        className="md:hidden fixed bottom-4 right-4 z-40 bg-primary-600 text-white p-3 rounded-full shadow-lg hover:bg-primary-700 transition"
+        className="md:hidden fixed bottom-4 left-4 z-40 bg-primary-600 text-white p-3 rounded-full shadow-lg hover:bg-primary-700 transition"
         aria-label="Open menu"
       >
         <HiMenu className="text-xl" />
