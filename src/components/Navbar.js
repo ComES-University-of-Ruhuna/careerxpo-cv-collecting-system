@@ -49,7 +49,8 @@ export default function Navbar() {
                 </span>
                 {user.role === 'student' && (
                   <span className="bg-primary-100 text-primary-700 text-xs px-2 py-0.5 rounded-full whitespace-nowrap shrink-0">
-                    {user.remaining_credits} credits
+                    {user.remaining_credits}
+                    <span className="hidden sm:inline"> credits</span>
                   </span>
                 )}
                 {user.role === 'admin' && (

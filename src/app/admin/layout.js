@@ -76,11 +76,11 @@ function AdminGuard({ children }) {
   if (!hasAnyAdminAccess(user)) return null;
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen max-w-full overflow-x-hidden flex flex-col">
       <Navbar />
-      <div className="flex flex-1">
+      <div className="flex flex-1 min-w-0 max-w-full">
         <Sidebar links={visibleLinks} />
-        <main className="flex-1 p-4 sm:p-6 md:p-8">{children}</main>
+        <main className="flex-1 min-w-0 max-w-full p-4 sm:p-6 md:p-8">{children}</main>
       </div>
       <Footer />
     </div>

@@ -7,6 +7,11 @@ export const metadata = {
   description: 'Career Fair CV Collection and Bidding System',
 };
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+};
+
 
 export default function RootLayout({ children }) {
   return (
