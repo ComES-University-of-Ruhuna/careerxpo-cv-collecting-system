@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { parseSriLankaDateTime } from '@/lib/date-time';
 import dbConnect from '@/lib/db';
 import User from '@/models/User';
 import { authenticate } from '@/lib/auth';
@@ -119,7 +120,7 @@ export async function POST(request) {
     if (!depositDateRaw) {
       return NextResponse.json({ error: 'Deposit date is required.' }, { status: 400 });
     }
-    const depositDate = new Date(depositDateRaw);
+    const depositDate = parseSriLankaDateTime(`${depositDateRaw}T00:00:00`);
     if (Number.isNaN(depositDate.getTime())) {
       return NextResponse.json({ error: 'Invalid deposit date.' }, { status: 400 });
     }

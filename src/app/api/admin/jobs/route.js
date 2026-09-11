@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { parseSriLankaDateTime } from '@/lib/date-time';
 import dbConnect from '@/lib/db';
 import Job from '@/models/Job';
 import Bid from '@/models/Bid';
@@ -68,13 +69,18 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Max applicants must be a positive integer' }, { status: 400 });
     }
 
+    const parsedDeadline = deadline ? parseSriLankaDateTime(deadline) : null;
+    if (parsedDeadline && Number.isNaN(parsedDeadline.getTime())) {
+      return NextResponse.json({ error: 'Invalid deadline' }, { status: 400 });
+    }
+
     const job = await Job.create({
       company_id,
       title,
       description: description || '',
       credit_cost: parsedCost,
       max_applicants: parsedMax,
-      deadline: deadline ? new Date(deadline) : null,
+      deadline: parsedDeadline,
       departments: departments || [],
     });
     await logActivity(admin.id, 'job_created', 'job', job._id, `Created job "${title}"`);
@@ -100,7 +106,7 @@ export async function POST(request) {
           jobTitle: title,
           companyName: company?.name || 'Unknown Company',
           creditCost: parsedCost,
-          deadline: deadline ? new Date(deadline) : null,
+          deadline: parsedDeadline,
           departments: depts,
         }).catch((err) => console.error('Failed to send job alert emails:', err));
       }

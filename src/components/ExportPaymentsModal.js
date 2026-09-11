@@ -1,5 +1,6 @@
 'use client';
 
+import { formatDate, formatDateTime, formatDateInput } from '@/lib/date-time';
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { HiX, HiDownload } from 'react-icons/hi';
@@ -28,14 +29,14 @@ const COLUMNS = [
     header: 'Deposit Date',
     get: (s) =>
       s.payment_details?.deposit_date
-        ? new Date(s.payment_details.deposit_date).toLocaleDateString()
+        ? formatDate(s.payment_details.deposit_date)
         : '',
   },
   {
     header: 'Submitted At',
     get: (s) =>
       s.payment_slip_uploaded_at
-        ? new Date(s.payment_slip_uploaded_at).toLocaleString()
+        ? formatDateTime(s.payment_slip_uploaded_at)
         : '',
   },
   { header: 'Slip URL', get: (s) => s.payment_slip_url || '' },
@@ -43,9 +44,7 @@ const COLUMNS = [
 ];
 
 function todayStamp() {
-  const d = new Date();
-  const pad = (n) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
+  return formatDateInput().replaceAll('-', '');
 }
 
 async function exportToXlsx(rows, fileBase) {
@@ -93,10 +92,10 @@ async function exportToPdf(rows, fileBase, meta) {
     s.payment_details?.reference_no || '',
     s.payment_details?.amount ?? '',
     s.payment_details?.deposit_date
-      ? new Date(s.payment_details.deposit_date).toLocaleDateString()
+      ? formatDate(s.payment_details.deposit_date)
       : '',
     s.payment_slip_uploaded_at
-      ? new Date(s.payment_slip_uploaded_at).toLocaleDateString()
+      ? formatDate(s.payment_slip_uploaded_at)
       : '',
   ]);
 
@@ -106,7 +105,7 @@ async function exportToPdf(rows, fileBase, meta) {
   doc.setFontSize(10);
   doc.setTextColor(100);
   doc.text(
-    `Exported: ${new Date().toLocaleString()} · Status: ${meta.status} · Department: ${
+    `Exported: ${formatDateTime(new Date())} · Status: ${meta.status} · Department: ${
       meta.department || 'All'
     } · Rows: ${rows.length}`,
     40,

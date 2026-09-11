@@ -1,5 +1,6 @@
 'use client';
 
+import { formatDateTime } from '@/lib/date-time';
 import { useAuth } from '@/components/AuthProvider';
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
@@ -93,9 +94,7 @@ export default function AdminLogs() {
   }
 
   function formatDate(ts) {
-    const d = new Date(ts);
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) +
-      ' ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    return formatDateTime(ts);
   }
 
   return (

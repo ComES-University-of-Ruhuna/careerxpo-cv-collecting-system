@@ -1,5 +1,6 @@
 'use client';
 
+import { formatDateInput } from '@/lib/date-time';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
@@ -47,7 +48,7 @@ export default function PaymentSlipModal({ open, onClose, token, user, onSuccess
   const [form, setForm] = useState({
     payer_name: user?.full_name || '',
     bank_name: '',
-    deposit_date: new Date().toISOString().slice(0, 10),
+    deposit_date: formatDateInput(),
     slip_no: '',
     reference_no: user?.registration_no || '',
     amount: REGISTRATION_FEE_LKR,
@@ -207,7 +208,7 @@ export default function PaymentSlipModal({ open, onClose, token, user, onSuccess
                   type="date"
                   value={form.deposit_date}
                   onChange={(e) => setForm({ ...form, deposit_date: e.target.value })}
-                  max={new Date().toISOString().slice(0, 10)}
+                  max={formatDateInput()}
                   required
                   className="input"
                 />

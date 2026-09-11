@@ -88,6 +88,14 @@ npm test
 npm run test:watch  # Watch mode
 ```
 
+### Time Zone
+
+All displayed activity times, deadlines, emails, exports, and calendar-day filters use **Sri Lanka time (`Asia/Colombo`, UTC+05:30)**, regardless of the browser or server timezone. Time displays are marked `SLST`.
+
+Database timestamps remain UTC instants. Deadline inputs without an offset are interpreted as Sri Lanka time; API clients may also send ISO timestamps with `Z` or an explicit offset. Editing a deadline converts the saved instant back to Sri Lanka time.
+
+Previously saved deadlines are not automatically shifted: review any deadlines entered before this fix, since their intended timezone cannot be inferred reliably.
+
 ### Configuration
 
 Create a `.env.local` file with the following variables:

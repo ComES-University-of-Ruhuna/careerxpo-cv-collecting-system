@@ -4,12 +4,26 @@ jest.mock('nodemailer', () => ({
   createTransport: jest.fn(() => ({ sendMail: mockSendMail })),
 }));
 
-import { sendBidConfirmationEmail } from '@/lib/email';
+import { sendBidConfirmationEmail, sendJobAlertEmails, sendPaymentSlipReceivedEmail } from '@/lib/email';
 
 describe('Email Library', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockSendMail.mockResolvedValue({ messageId: 'test-id' });
+  });
+
+  it('formats job deadlines and payment timestamps in Sri Lanka time', async () => {
+    process.env.SMTP_HOST = 'smtp.test.com';
+    await sendJobAlertEmails({
+      recipients: ['student@example.com'], jobTitle: 'Engineer', companyName: 'Company',
+      creditCost: 10, deadline: new Date('2026-09-10T19:00:00Z'), departments: [],
+    });
+    expect(mockSendMail.mock.calls[0][0].html).toContain('11 Sept 2026, 12:30 am SLST');
+    await sendPaymentSlipReceivedEmail({
+      to: 'student@example.com', studentName: 'Student', registrationNo: 'EG/2022/0001',
+      amount: 500, uploadedAt: '2026-09-10T19:00:00Z',
+    });
+    expect(mockSendMail.mock.calls[1][0].html).toContain('11 Sept 2026, 12:30 am SLST');
   });
 
   describe('sendBidConfirmationEmail', () => {

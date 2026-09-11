@@ -1,5 +1,6 @@
 'use client';
 
+import { formatDate } from '@/lib/date-time';
 import { useAuth } from '@/components/AuthProvider';
 import { useEffect, useState } from 'react';
 import { HiCurrencyDollar, HiDocumentText, HiCollection } from 'react-icons/hi';
@@ -82,7 +83,7 @@ export default function StudentDashboard() {
                 <div className="min-w-0">
                   <p className="font-medium text-gray-900 truncate">{bid.job_id?.title || 'Unknown Position'}</p>
                   <p className="text-sm text-gray-500 truncate">
-                    {bid.job_id?.company_id?.name || 'Unknown Company'} · {new Date(bid.timestamp).toLocaleDateString()}
+                    {bid.job_id?.company_id?.name || 'Unknown Company'} · {formatDate(bid.timestamp)}
                   </p>
                 </div>
                 <span className="text-sm font-medium text-primary-600 shrink-0">-{bid.credits_spent} credits</span>

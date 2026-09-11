@@ -91,6 +91,25 @@ describe('POST /api/guest/posts', () => {
     }));
   });
 
+  it('should interpret a guest deadline in Sri Lanka time', async () => {
+    mockGuestPostCreate.mockResolvedValue({ _id: 'post1', status: 'pending' });
+    const res = await POST(createRequest({
+      contact_name: 'John', contact_email: 'a@b.com', contact_phone: '123456789',
+      company_name: 'Co', job_title: 'Dev', deadline: '2026-09-11T18:00',
+    }));
+    expect(res.status).toBe(201);
+    expect(mockGuestPostCreate.mock.calls[0][0].deadline.toISOString()).toBe('2026-09-11T12:30:00.000Z');
+  });
+
+  it('should reject an invalid guest deadline', async () => {
+    const res = await POST(createRequest({
+      contact_name: 'John', contact_email: 'a@b.com', contact_phone: '123456789',
+      company_name: 'Co', job_title: 'Dev', deadline: '2026-02-30T18:00',
+    }));
+    expect(res.status).toBe(400);
+    expect(mockGuestPostCreate).not.toHaveBeenCalled();
+  });
+
   it('should return 400 for invalid department', async () => {
     const res = await POST(createRequest({
       contact_name: 'John',

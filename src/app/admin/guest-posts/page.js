@@ -1,5 +1,6 @@
 'use client';
 
+import { formatDate, formatDateTime } from '@/lib/date-time';
 import { useAuth } from '@/components/AuthProvider';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -125,7 +126,7 @@ export default function AdminGuestPostsPage() {
                 <p className="text-sm text-gray-600 truncate">{post.company_name}</p>
                 <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
                   <span className="flex items-center gap-1"><HiUser /> {post.contact_name}</span>
-                  <span>{new Date(post.created_at).toLocaleDateString()}</span>
+                  <span>{formatDate(post.created_at)}</span>
                 </div>
               </button>
             ))}
@@ -197,7 +198,7 @@ export default function AdminGuestPostsPage() {
                   {selected.deadline && (
                     <div>
                       <span className="text-gray-500">Deadline:</span>
-                      <span className="ml-2">{new Date(selected.deadline).toLocaleString()}</span>
+                      <span className="ml-2">{formatDateTime(selected.deadline)}</span>
                     </div>
                   )}
                 </div>
@@ -239,7 +240,7 @@ export default function AdminGuestPostsPage() {
                     <p className="font-medium capitalize">{selected.status}</p>
                     {selected.credit_cost && <p>Credit cost: {selected.credit_cost}</p>}
                     {selected.admin_note && <p>Note: {selected.admin_note}</p>}
-                    {selected.reviewed_at && <p className="text-gray-400 mt-1">Reviewed: {new Date(selected.reviewed_at).toLocaleString()}</p>}
+                    {selected.reviewed_at && <p className="text-gray-400 mt-1">Reviewed: {formatDateTime(selected.reviewed_at)}</p>}
                   </div>
                 )}
               </div>

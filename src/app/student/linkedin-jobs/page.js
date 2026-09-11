@@ -1,5 +1,6 @@
 'use client';
 
+import { formatDate } from '@/lib/date-time';
 import { useAuth } from '@/components/AuthProvider';
 import { useEffect, useState } from 'react';
 import { HiExternalLink, HiLocationMarker, HiOfficeBuilding } from 'react-icons/hi';
@@ -65,7 +66,7 @@ export default function StudentLinkedInJobs() {
               {job.description && (
                 <p className="text-sm text-gray-600 mt-3 line-clamp-2">{job.description}</p>
               )}
-              <p className="text-xs text-gray-400 mt-3">{new Date(job.created_at).toLocaleDateString()}</p>
+              <p className="text-xs text-gray-400 mt-3">{formatDate(job.created_at)}</p>
             </a>
           ))}
         </div>

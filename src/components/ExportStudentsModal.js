@@ -1,5 +1,6 @@
 'use client';
 
+import { formatDateTime, formatDateInput } from '@/lib/date-time';
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { HiX, HiDownload } from 'react-icons/hi';
@@ -24,18 +25,16 @@ const COLUMNS = [
   {
     header: 'Payment Submitted At',
     get: (s) =>
-      s.payment_slip_uploaded_at ? new Date(s.payment_slip_uploaded_at).toLocaleString() : '',
+      s.payment_slip_uploaded_at ? formatDateTime(s.payment_slip_uploaded_at) : '',
   },
   {
     header: 'Registered At',
-    get: (s) => (s.created_at ? new Date(s.created_at).toLocaleString() : ''),
+    get: (s) => (s.created_at ? formatDateTime(s.created_at) : ''),
   },
 ];
 
 function todayStamp() {
-  const d = new Date();
-  const pad = (n) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
+  return formatDateInput().replaceAll('-', '');
 }
 
 async function exportRows(rows, fileBase, format) {

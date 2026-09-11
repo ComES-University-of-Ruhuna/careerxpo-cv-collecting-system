@@ -1,5 +1,6 @@
 'use client';
 
+import { formatDateTime } from '@/lib/date-time';
 import { useAuth } from '@/components/AuthProvider';
 import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -342,7 +343,7 @@ export default function CompaniesPage() {
                               </div>
                               {job.deadline && !isClosed && (
                                 <p className="text-xs mt-0.5 text-amber-600">
-                                  Deadline: {new Date(job.deadline).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                  Deadline: {formatDateTime(job.deadline)}
                                 </p>
                               )}
                               {job.max_applicants && !isClosed && (

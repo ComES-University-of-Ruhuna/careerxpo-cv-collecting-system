@@ -1,5 +1,6 @@
 'use client';
 
+import { formatDate, formatDateTime } from '@/lib/date-time';
 import { useAuth } from '@/components/AuthProvider';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -369,7 +370,7 @@ export default function ProfilePage() {
           <div>
             <label className="text-sm font-medium text-gray-500">Account Created</label>
             <p className="text-gray-900 mt-1">
-              {user?.created_at ? new Date(user.created_at).toLocaleDateString() : '—'}
+              {user?.created_at ? formatDate(user.created_at) : '—'}
             </p>
           </div>
         </div>
@@ -548,7 +549,7 @@ function SlipStatusBanner({ status, uploaded, user }) {
   }
 
   const uploadedAt = user?.payment_slip_uploaded_at
-    ? new Date(user.payment_slip_uploaded_at).toLocaleString()
+    ? formatDateTime(user.payment_slip_uploaded_at)
     : null;
 
   const map = {

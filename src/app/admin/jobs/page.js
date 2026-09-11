@@ -1,5 +1,6 @@
 'use client';
 
+import { formatDateTime, formatDateTimeInput, TIME_ZONE_LABEL } from '@/lib/date-time';
 import { useAuth } from '@/components/AuthProvider';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -78,7 +79,7 @@ export default function AdminJobs() {
       description: job.description || '',
       credit_cost: String(job.credit_cost || 10),
       max_applicants: job.max_applicants ? String(job.max_applicants) : '',
-      deadline: job.deadline ? new Date(job.deadline).toISOString().slice(0, 16) : '',
+      deadline: job.deadline ? formatDateTimeInput(job.deadline) : '',
       departments: job.departments || [],
     });
     setFormula({ base_value: '20', rating: 3, domain_demand: '1.0' });
@@ -272,8 +273,8 @@ export default function AdminJobs() {
                 <p className="text-xs text-gray-400 mt-1">{creditMethod === 'formula' ? 'Also used as Applicant Limit (L) in the formula' : 'Leave empty for unlimited'}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Application Deadline</label>
-                <input type="datetime-local" value={form.deadline} onChange={(e) => setForm({ ...form, deadline: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Application Deadline ({TIME_ZONE_LABEL})</label>
+                <input type="datetime-local" aria-label={`Deadline (${TIME_ZONE_LABEL})`} title={TIME_ZONE_LABEL} value={form.deadline} onChange={(e) => setForm({ ...form, deadline: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" />
                 <p className="text-xs text-gray-400 mt-1">Leave empty for no deadline</p>
               </div>
             </div>
@@ -458,7 +459,7 @@ export default function AdminJobs() {
                       : <span className="text-gray-400">All</span>}
                   </td>
                   <td className="px-5 py-3 text-sm text-gray-500 whitespace-nowrap">
-                    {j.deadline ? new Date(j.deadline).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : <span className="text-gray-400">None</span>}
+                    {j.deadline ? formatDateTime(j.deadline) : <span className="text-gray-400">None</span>}
                   </td>
                   <td className="px-5 py-3">
                     {(() => { const s = getJobStatus(j); return <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${s.color}`}>{s.label}</span>; })()}

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { parseSriLankaDateTime } from '@/lib/date-time';
 import dbConnect from '@/lib/db';
 import GuestPost from '@/models/GuestPost';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
@@ -72,6 +73,11 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Invalid department selected.' }, { status: 400 });
     }
 
+    const parsedDeadline = deadline ? parseSriLankaDateTime(deadline) : null;
+    if (parsedDeadline && Number.isNaN(parsedDeadline.getTime())) {
+      return NextResponse.json({ error: 'Invalid deadline' }, { status: 400 });
+    }
+
     const post = await GuestPost.create({
       contact_name: contact_name.trim(),
       contact_email: contact_email.trim().toLowerCase(),
@@ -83,7 +89,7 @@ export async function POST(request) {
       job_description: job_description?.trim() || '',
       departments: departments || [],
       max_applicants: max_applicants && Number(max_applicants) > 0 ? Number(max_applicants) : null,
-      deadline: deadline ? new Date(deadline) : null,
+      deadline: parsedDeadline,
     });
 
     return NextResponse.json({

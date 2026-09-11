@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { parseSriLankaDateTime } from '@/lib/date-time';
 import dbConnect from '@/lib/db';
 import Job from '@/models/Job';
 import { requirePermission, isValidObjectId, ADMIN_PERMISSIONS } from '@/lib/auth';
@@ -48,7 +49,10 @@ export async function PUT(request, { params }) {
       }
     }
     if (deadline !== undefined) {
-      update.deadline = deadline ? new Date(deadline) : null;
+      update.deadline = deadline ? parseSriLankaDateTime(deadline) : null;
+      if (update.deadline && Number.isNaN(update.deadline.getTime())) {
+        return NextResponse.json({ error: 'Invalid deadline' }, { status: 400 });
+      }
     }
     if (is_closed !== undefined) {
       update.is_closed = !!is_closed;

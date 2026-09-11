@@ -1,5 +1,6 @@
 'use client';
 
+import { formatDate } from '@/lib/date-time';
 import { useAuth } from '@/components/AuthProvider';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -192,7 +193,7 @@ export default function AdminLinkedInJobs() {
                         {job.is_active ? 'Active' : 'Inactive'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-500 hidden md:table-cell">{new Date(job.created_at).toLocaleDateString()}</td>
+                    <td className="px-4 py-3 text-sm text-gray-500 hidden md:table-cell">{formatDate(job.created_at)}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
                         <button onClick={() => toggleActive(job)} className="p-1.5 text-gray-400 hover:text-gray-700 rounded" title={job.is_active ? 'Deactivate' : 'Activate'}>

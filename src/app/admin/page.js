@@ -1,5 +1,6 @@
 'use client';
 
+import { formatDate, formatDateTime, formatDateInput, parseSriLankaDateTime } from '@/lib/date-time';
 import { useAuth } from '@/components/AuthProvider';
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -65,8 +66,8 @@ export default function AdminDashboard() {
     const createdAt = new Date(job.created_at);
     if (companyFilter !== 'all' && String(job.company_id) !== companyFilter) return false;
     if (statusFilter !== 'all' && getVacancyStatus(job) !== statusFilter) return false;
-    if (dateFrom && createdAt < new Date(`${dateFrom}T00:00:00`)) return false;
-    if (dateTo && createdAt > new Date(`${dateTo}T23:59:59.999`)) return false;
+    if (dateFrom && createdAt < parseSriLankaDateTime(`${dateFrom}T00:00:00`)) return false;
+    if (dateTo && createdAt > parseSriLankaDateTime(`${dateTo}T23:59:59.999`)) return false;
     return true;
   });
 
@@ -81,17 +82,17 @@ export default function AdminDashboard() {
       job.max_applicants ? `${Math.round((job.total_bids / job.max_applicants) * 100)}%` : '',
       job.credit_cost,
       job.credits_spent,
-      job.created_at ? new Date(job.created_at).toISOString() : '',
-      job.deadline ? new Date(job.deadline).toISOString() : '',
-      job.first_bid_at ? new Date(job.first_bid_at).toISOString() : '',
-      job.last_bid_at ? new Date(job.last_bid_at).toISOString() : '',
+      job.created_at ? formatDateTime(job.created_at) : '',
+      job.deadline ? formatDateTime(job.deadline) : '',
+      job.first_bid_at ? formatDateTime(job.first_bid_at) : '',
+      job.last_bid_at ? formatDateTime(job.last_bid_at) : '',
     ]);
     const headings = ['Vacancy', 'Company', 'Status', 'Bids', 'Max Applicants', 'Fill Rate', 'Credits Per Bid', 'Credits Spent', 'Created', 'Deadline', 'First Bid', 'Last Bid'];
     const csv = [headings, ...rows].map((row) => row.map(escapeCsv).join(',')).join('\n');
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
     const link = document.createElement('a');
     link.href = url;
-    link.download = `careerxpo-vacancy-stats-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.download = `careerxpo-vacancy-stats-${formatDateInput()}.csv`;
     link.click();
     URL.revokeObjectURL(url);
   }
@@ -112,7 +113,7 @@ export default function AdminDashboard() {
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
     const link = document.createElement('a');
     link.href = url;
-    link.download = `careerxpo-payment-stats-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.download = `careerxpo-payment-stats-${formatDateInput()}.csv`;
     link.click();
     URL.revokeObjectURL(url);
   }
@@ -462,9 +463,9 @@ export default function AdminDashboard() {
                     <td className="px-4 py-3 text-sm text-gray-600">{job.max_applicants || 'Unlimited'}</td>
                     <td className="px-4 py-3 text-sm text-gray-600">{fillRate === null ? 'N/A' : `${fillRate}%`}</td>
                     <td className="px-4 py-3 text-sm text-gray-600 tabular-nums">{job.credits_spent || 0}</td>
-                    <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">{job.first_bid_at ? new Date(job.first_bid_at).toLocaleDateString() : 'None'}</td>
-                    <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">{job.last_bid_at ? new Date(job.last_bid_at).toLocaleDateString() : 'None'}</td>
-                    <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">{new Date(job.created_at).toLocaleDateString()}</td>
+                    <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">{job.first_bid_at ? formatDate(job.first_bid_at) : 'None'}</td>
+                    <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">{job.last_bid_at ? formatDate(job.last_bid_at) : 'None'}</td>
+                    <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">{formatDate(job.created_at)}</td>
                   </tr>
                 );
               })}

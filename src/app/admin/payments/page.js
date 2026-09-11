@@ -1,5 +1,6 @@
 'use client';
 
+import { formatDate, formatDateTime } from '@/lib/date-time';
 import { useAuth } from '@/components/AuthProvider';
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -435,9 +436,9 @@ export default function AdminPaymentsPage() {
                 {filtered.map((s) => {
                   const d = s.payment_details || {};
                   const submittedAt = s.payment_slip_uploaded_at
-                    ? new Date(s.payment_slip_uploaded_at).toLocaleString()
+                    ? formatDateTime(s.payment_slip_uploaded_at)
                     : '—';
-                  const depositAt = d.deposit_date ? new Date(d.deposit_date).toLocaleDateString() : '—';
+                  const depositAt = d.deposit_date ? formatDate(d.deposit_date) : '—';
                   const isBusy = updatingId === s._id;
                   return (
                     <tr key={s._id} className="hover:bg-gray-50">

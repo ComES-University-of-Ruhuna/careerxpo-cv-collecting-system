@@ -1,5 +1,6 @@
 'use client';
 
+import { formatDate } from '@/lib/date-time';
 import { useAuth } from '@/components/AuthProvider';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -469,7 +470,7 @@ export default function AdminStudents() {
                         <div>
                           <p className="font-medium text-gray-900 text-sm">{bid.job_id?.title || 'Unknown Position'}</p>
                           <p className="text-xs text-gray-500">
-                            {bid.job_id?.company_id?.name || 'Unknown Company'} · {new Date(bid.timestamp).toLocaleDateString()}
+                            {bid.job_id?.company_id?.name || 'Unknown Company'} · {formatDate(bid.timestamp)}
                           </p>
                         </div>
                         <div className="flex items-center gap-3">

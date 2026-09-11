@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { parseSriLankaDateTime } from '@/lib/date-time';
 import dbConnect from '@/lib/db';
 import User from '@/models/User';
 import { requirePermission, ADMIN_PERMISSIONS } from '@/lib/auth';
@@ -11,8 +12,8 @@ const VALID_STATUSES = ['pending', 'verified', 'rejected'];
 //   status=pending|verified|rejected|all (default: all submitted)
 //   department=DEIE|... (optional)
 //   q=<name|reg_no|email>
-//   from=YYYY-MM-DD  (submissions on or after 00:00 local time)
-//   to=YYYY-MM-DD    (submissions on or before 23:59:59.999 local time)
+//   from=YYYY-MM-DD  (submissions on or after 00:00 Sri Lanka time)
+//   to=YYYY-MM-DD    (submissions on or before 23:59:59.999 Sri Lanka time)
 //   limit=<int> (default 100, max 500)
 export async function GET(request) {
   try {
@@ -47,24 +48,19 @@ export async function GET(request) {
       filter.department = department;
     }
 
-    // Date range on payment_slip_uploaded_at. Interpret each date in the
-    // server's local timezone so `from` covers the whole start day and `to`
-    // covers the whole end day.
     const dateFilter = {};
     if (fromRaw) {
-      const from = new Date(fromRaw);
+      const from = parseSriLankaDateTime(`${fromRaw}T00:00:00`);
       if (Number.isNaN(from.getTime())) {
         return NextResponse.json({ error: 'Invalid "from" date' }, { status: 400 });
       }
-      from.setHours(0, 0, 0, 0);
       dateFilter.$gte = from;
     }
     if (toRaw) {
-      const to = new Date(toRaw);
+      const to = parseSriLankaDateTime(`${toRaw}T23:59:59.999`);
       if (Number.isNaN(to.getTime())) {
         return NextResponse.json({ error: 'Invalid "to" date' }, { status: 400 });
       }
-      to.setHours(23, 59, 59, 999);
       dateFilter.$lte = to;
     }
     if (dateFilter.$gte && dateFilter.$lte && dateFilter.$gte > dateFilter.$lte) {

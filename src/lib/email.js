@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import { formatDateTime, formatDateInput } from '@/lib/date-time';
 
 let transporter;
 
@@ -64,7 +65,7 @@ export async function sendBidConfirmationEmail({ to, studentName, jobTitle, comp
         </p>
       </div>
       <div style="text-align: center; padding: 16px; color: #9ca3af; font-size: 12px;">
-        &copy; ${new Date().getFullYear()} CareerXpo — Career Fair CV Collection &amp; Bidding System
+        &copy; ${formatDateInput().slice(0, 4)} CareerXpo — Career Fair CV Collection &amp; Bidding System
       </div>
     </div>
   `;
@@ -88,7 +89,7 @@ export async function sendJobAlertEmails({ recipients, jobTitle, companyName, cr
 
   const deptText = departments?.length > 0 ? departments.join(', ') : 'All Departments';
   const deadlineText = deadline
-    ? new Date(deadline).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+    ? formatDateTime(deadline)
     : 'No deadline';
 
   const html = `
@@ -134,7 +135,7 @@ export async function sendJobAlertEmails({ recipients, jobTitle, companyName, cr
         </p>
       </div>
       <div style="text-align: center; padding: 16px; color: #9ca3af; font-size: 12px;">
-        &copy; ${new Date().getFullYear()} CareerXpo — Career Fair CV Collection &amp; Bidding System
+        &copy; ${formatDateInput().slice(0, 4)} CareerXpo — Career Fair CV Collection &amp; Bidding System
       </div>
     </div>
   `;
@@ -169,8 +170,8 @@ export async function sendPaymentSlipReceivedEmail({ to, studentName, registrati
   }
 
   const submittedText = uploadedAt
-    ? new Date(uploadedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-    : new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    ? formatDateTime(uploadedAt)
+    : formatDateTime(new Date());
 
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -199,7 +200,7 @@ export async function sendPaymentSlipReceivedEmail({ to, studentName, registrati
         </p>
       </div>
       <div style="text-align: center; padding: 16px; color: #9ca3af; font-size: 12px;">
-        &copy; ${new Date().getFullYear()} CareerXpo — Career Fair CV Collection &amp; Bidding System
+        &copy; ${formatDateInput().slice(0, 4)} CareerXpo — Career Fair CV Collection &amp; Bidding System
       </div>
     </div>
   `;
@@ -242,7 +243,7 @@ export async function sendPaymentVerifiedEmail({ to, studentName, registrationNo
         </p>
       </div>
       <div style="text-align: center; padding: 16px; color: #9ca3af; font-size: 12px;">
-        &copy; ${new Date().getFullYear()} CareerXpo — Career Fair CV Collection &amp; Bidding System
+        &copy; ${formatDateInput().slice(0, 4)} CareerXpo — Career Fair CV Collection &amp; Bidding System
       </div>
     </div>
   `;

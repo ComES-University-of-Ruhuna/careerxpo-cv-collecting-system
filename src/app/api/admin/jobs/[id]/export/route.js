@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { formatDateTime } from '@/lib/date-time';
 import * as XLSX from 'xlsx';
 import dbConnect from '@/lib/db';
 import Job from '@/models/Job';
@@ -25,7 +26,7 @@ export async function GET(request, { params }) {
       'Email': bid.user_id?.email || '',
       'Department': bid.user_id?.department || '',
       'CV Link': bid.cv_url || '',
-      'Applied At': bid.timestamp ? new Date(bid.timestamp).toLocaleString('en-US') : '',
+      'Applied At': bid.timestamp ? formatDateTime(bid.timestamp) : '',
     }));
 
     const wb = XLSX.utils.book_new();
