@@ -45,7 +45,10 @@ export default function AdminPaymentsPage() {
   const [updatingId, setUpdatingId] = useState(null);
   // Global toggle — whether students see the payment slip upload section.
   const [uploadsEnabled, setUploadsEnabled] = useState(true);
+  // Per-department override: { [DEPT]: boolean }. Missing dept = enabled.
+  const [deptUploads, setDeptUploads] = useState({});
   const [toggling, setToggling] = useState(false);
+  const [togglingDept, setTogglingDept] = useState('');
   const [exportOpen, setExportOpen] = useState(false);
 
   async function fetchSettings() {
@@ -55,7 +58,14 @@ export default function AdminPaymentsPage() {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      if (res.ok) setUploadsEnabled(!!data.payment_slip_enabled);
+      if (res.ok) {
+        setUploadsEnabled(!!data.payment_slip_enabled);
+        setDeptUploads(
+          data.payment_slip_departments && typeof data.payment_slip_departments === 'object'
+            ? data.payment_slip_departments
+            : {}
+        );
+      }
     } catch {}
   }
 
@@ -79,6 +89,42 @@ export default function AdminPaymentsPage() {
       toast.error('Failed to update setting');
     } finally {
       setToggling(false);
+    }
+  }
+
+  function isDeptEnabled(dept) {
+    // Missing entries default to enabled to match server-side semantics.
+    return deptUploads[dept] !== false;
+  }
+
+  async function toggleDeptUploads(dept, next) {
+    if (togglingDept) return;
+    setTogglingDept(dept);
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ payment_slip_departments: { [dept]: next } }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || 'Failed to update setting');
+        return;
+      }
+      setDeptUploads(
+        data.payment_slip_departments && typeof data.payment_slip_departments === 'object'
+          ? data.payment_slip_departments
+          : {}
+      );
+      toast.success(
+        next
+          ? `Payment slip uploads enabled for ${dept}`
+          : `Payment slip uploads disabled for ${dept}`
+      );
+    } catch {
+      toast.error('Failed to update setting');
+    } finally {
+      setTogglingDept('');
     }
   }
 
@@ -214,6 +260,60 @@ export default function AdminPaymentsPage() {
             <span className="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-5" />
           </span>
         </label>
+      </div>
+
+      {/* Per-department overrides */}
+      <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-3">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-gray-900">Per-department overrides</p>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Disable the payment slip upload for individual departments. The global toggle above
+              must be enabled for any department toggle to take effect.
+            </p>
+          </div>
+          {!uploadsEnabled && (
+            <span className="text-[11px] font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5 shrink-0">
+              Global toggle is off
+            </span>
+          )}
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+          {DEPARTMENTS.map((d) => {
+            const enabled = isDeptEnabled(d.value);
+            const busy = togglingDept === d.value;
+            const effective = uploadsEnabled && enabled;
+            return (
+              <div
+                key={d.value}
+                className={`flex items-center justify-between gap-3 p-3 rounded-lg border ${
+                  effective ? 'border-gray-200 bg-white' : 'border-gray-200 bg-gray-50'
+                }`}
+              >
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-gray-900 truncate">{d.value}</p>
+                  <p className="text-xs text-gray-500 truncate">{d.label.replace(`${d.value} - `, '')}</p>
+                </div>
+                <label className="inline-flex items-center gap-2 shrink-0 cursor-pointer select-none">
+                  <span className={`text-[11px] font-medium ${enabled ? 'text-emerald-600' : 'text-gray-400'}`}>
+                    {enabled ? 'On' : 'Off'}
+                  </span>
+                  <span className="relative inline-flex">
+                    <input
+                      type="checkbox"
+                      className="peer sr-only"
+                      checked={enabled}
+                      disabled={busy}
+                      onChange={(e) => toggleDeptUploads(d.value, e.target.checked)}
+                    />
+                    <span className="w-9 h-5 bg-gray-300 rounded-full peer-checked:bg-emerald-500 transition-colors peer-disabled:opacity-60" />
+                    <span className="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4" />
+                  </span>
+                </label>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* Status tabs */}

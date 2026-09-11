@@ -3,7 +3,7 @@ import dbConnect from '@/lib/db';
 import User from '@/models/User';
 import { authenticate } from '@/lib/auth';
 import { uploadPaymentSlipToDrive } from '@/lib/google-drive';
-import { getSettings } from '@/lib/settings';
+import { getSettings, isPaymentSlipEnabledForDepartment } from '@/lib/settings';
 import { sendPaymentSlipReceivedEmail } from '@/lib/email';
 
 // Registration fee (LKR). Keep in sync with the amount shown in the UI.
@@ -68,8 +68,8 @@ export async function POST(request) {
     const decoded = authenticate(request);
     if (!decoded) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    // Respect the admin-controlled global toggle. If uploads are disabled,
-    // reject before doing any I/O.
+    // Respect the admin-controlled toggles. If uploads are disabled globally
+    // or for the student's department, reject before doing any I/O.
     const settings = await getSettings();
     if (!settings.payment_slip_enabled) {
       return NextResponse.json(
@@ -81,6 +81,13 @@ export async function POST(request) {
     await dbConnect();
     const user = await User.findById(decoded.id);
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
+
+    if (!isPaymentSlipEnabledForDepartment(settings, user.department)) {
+      return NextResponse.json(
+        { error: 'Payment slip uploads are currently disabled for your department.' },
+        { status: 403 }
+      );
+    }
 
     if (!user.registration_no) {
       return NextResponse.json(

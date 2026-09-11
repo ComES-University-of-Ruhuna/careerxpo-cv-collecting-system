@@ -63,13 +63,17 @@ export default function ProfilePage() {
   }, [user]);
 
   // Load the admin-controlled payment-slip toggle so we know whether to
-  // render the Registration Fee section at all.
+  // render the Registration Fee section at all. Uses the effective flag
+  // (global AND per-department) for the currently signed-in student.
   useEffect(() => {
     if (!token) return;
     fetch('/api/settings', { headers: { Authorization: `Bearer ${token}` } })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
-        if (data && typeof data.payment_slip_enabled === 'boolean') {
+        if (!data) return;
+        if (typeof data.payment_slip_enabled_for_me === 'boolean') {
+          setPaymentUploadsEnabled(data.payment_slip_enabled_for_me);
+        } else if (typeof data.payment_slip_enabled === 'boolean') {
           setPaymentUploadsEnabled(data.payment_slip_enabled);
         }
       })
