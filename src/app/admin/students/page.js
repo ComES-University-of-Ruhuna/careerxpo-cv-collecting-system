@@ -4,7 +4,7 @@ import { formatDate } from '@/lib/date-time';
 import { useAuth } from '@/components/AuthProvider';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { HiSearch, HiRefresh, HiTrash, HiEye, HiX, HiShieldCheck, HiFilter, HiExternalLink, HiDownload } from 'react-icons/hi';
+import { HiSearch, HiRefresh, HiTrash, HiEye, HiX, HiShieldCheck, HiFilter, HiExternalLink, HiDownload, HiChevronLeft, HiChevronRight } from 'react-icons/hi';
 import { DEPARTMENTS } from '@/lib/departments';
 import ExportStudentsModal from '@/components/ExportStudentsModal';
 
@@ -33,36 +33,55 @@ export default function AdminStudents() {
   // Browse mode — table of students filtered by department
   const [browseList, setBrowseList] = useState([]);
   const [browseDepartment, setBrowseDepartment] = useState('');
-  const [browseLoading, setBrowseLoading] = useState(false);
+  const [browseLoading, setBrowseLoading] = useState(true);
+  const [browsePage, setBrowsePage] = useState(1);
+  const [browseLimit, setBrowseLimit] = useState(100);
+  const [browsePagination, setBrowsePagination] = useState({ page: 1, limit: 100, total: 0, totalPages: 1 });
+  const [browseRefresh, setBrowseRefresh] = useState(0);
+  const [browseError, setBrowseError] = useState('');
   const [exportOpen, setExportOpen] = useState(false);
 
-  async function fetchBrowseList() {
-    if (!token) return;
+  function fetchBrowseList() {
     setBrowseLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (browseDepartment) params.set('department', browseDepartment);
-      const res = await fetch(`/api/admin/students?${params.toString()}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || 'Failed to load students');
-        setBrowseList([]);
-        return;
-      }
-      setBrowseList(data.students || []);
-    } catch {
-      toast.error('Failed to load students');
-    } finally {
-      setBrowseLoading(false);
-    }
+    setBrowseRefresh((current) => current + 1);
   }
 
   useEffect(() => {
-    fetchBrowseList();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, browseDepartment]);
+    if (!token) return;
+    const controller = new AbortController();
+    setBrowseLoading(true);
+    setBrowseError('');
+    async function loadStudents() {
+      try {
+        const params = new URLSearchParams({ page: String(browsePage), limit: String(browseLimit) });
+        if (browseDepartment) params.set('department', browseDepartment);
+        const res = await fetch(`/api/admin/students?${params.toString()}`, {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: controller.signal,
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to load students');
+        if (controller.signal.aborted) return;
+        setBrowseList(data.students || []);
+        setBrowsePagination(data.pagination);
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        const message = error.message || 'Failed to load students';
+        toast.error(message);
+        setBrowseError(message);
+        setBrowseList([]);
+      } finally {
+        if (!controller.signal.aborted) setBrowseLoading(false);
+      }
+    }
+    loadStudents();
+    return () => controller.abort();
+  }, [token, browseDepartment, browsePage, browseLimit, browseRefresh]);
+
+  function changeBrowsePage(page) {
+    setBrowseLoading(true);
+    setBrowsePage(page);
+  }
 
   async function handleSearch(e) {
     e?.preventDefault();
@@ -123,6 +142,7 @@ export default function AdminStudents() {
       if (!res.ok) { toast.error(data.error || 'Failed to save'); return; }
       toast.success('Permissions updated');
       setSelected((prev) => (prev ? { ...prev, admin_permissions: data.admin_permissions } : prev));
+      fetchBrowseList();
     } catch {
       toast.error('Failed to save permissions');
     } finally {
@@ -163,6 +183,7 @@ export default function AdminStudents() {
       setSelected(null);
       setBids([]);
       setStudents((prev) => prev.filter((s) => s._id !== id));
+      fetchBrowseList();
     } catch {
       toast.error('Failed to delete student');
     }
@@ -177,15 +198,20 @@ export default function AdminStudents() {
         <div className="p-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h2 className="font-semibold text-gray-900">All Students</h2>
-            <p className="text-xs text-gray-500 mt-0.5">
-              {browseLoading ? 'Loading…' : `${browseList.length} student(s) shown`}
+            <p role="status" className="text-xs text-gray-500 mt-0.5">
+              {browseLoading ? 'Loading…' : browseError ? 'Students unavailable' : browsePagination.total === 0 ? '0 students' : `Showing ${(browsePagination.page - 1) * browsePagination.limit + 1}-${(browsePagination.page - 1) * browsePagination.limit + browseList.length} of ${browsePagination.total} students`}
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <HiFilter className="text-gray-400" />
             <select
+              aria-label="Filter students by department"
               value={browseDepartment}
-              onChange={(e) => setBrowseDepartment(e.target.value)}
+              onChange={(event) => {
+                setBrowseDepartment(event.target.value);
+                setBrowsePage(1);
+                setBrowseLoading(true);
+              }}
               className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
             >
               <option value="">All departments</option>
@@ -198,7 +224,8 @@ export default function AdminStudents() {
             <button
               type="button"
               onClick={fetchBrowseList}
-              className="inline-flex items-center gap-1.5 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
+              disabled={browseLoading}
+              className="inline-flex items-center gap-1.5 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
             >
               <HiRefresh /> Refresh
             </button>
@@ -216,6 +243,8 @@ export default function AdminStudents() {
           <div className="p-12 flex justify-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" />
           </div>
+        ) : browseError ? (
+          <p role="alert" className="p-12 text-center text-red-600 text-sm">{browseError}</p>
         ) : browseList.length === 0 ? (
           <p className="p-12 text-center text-gray-400 text-sm">No students found for this filter.</p>
         ) : (
@@ -324,6 +353,55 @@ export default function AdminStudents() {
             </table>
           </div>
         )}
+        <div className="flex flex-wrap items-center justify-between gap-4 p-4 border-t border-gray-200">
+          <label className="flex items-center gap-2 text-sm text-gray-600">
+            Rows per page
+            <select
+              value={browseLimit}
+              onChange={(event) => {
+                setBrowseLimit(Number(event.target.value));
+                setBrowsePage(1);
+                setBrowseLoading(true);
+              }}
+              className="px-2 py-2 border border-gray-300 rounded-lg bg-white text-gray-700"
+            >
+              {[25, 50, 100, 200].map((limit) => <option key={limit} value={limit}>{limit}</option>)}
+            </select>
+          </label>
+          <nav aria-label="Student pagination" className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => changeBrowsePage(browsePagination.page - 1)}
+              disabled={browseLoading || !!browseError || browsePagination.page <= 1}
+              className="inline-flex items-center gap-1 px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <HiChevronLeft /> Previous
+            </button>
+            <label className="flex items-center gap-2 text-sm text-gray-600">
+              Page
+              <select
+                aria-label="Student page"
+                value={browsePagination.page}
+                onChange={(event) => changeBrowsePage(Number(event.target.value))}
+                disabled={browseLoading || !!browseError || browsePagination.totalPages <= 1}
+                className="min-w-14 px-2 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 disabled:opacity-50"
+              >
+                {Array.from({ length: browsePagination.totalPages }, (_, index) => (
+                  <option key={index + 1} value={index + 1}>{index + 1}</option>
+                ))}
+              </select>
+              <span>of {browsePagination.totalPages}</span>
+            </label>
+            <button
+              type="button"
+              onClick={() => changeBrowsePage(browsePagination.page + 1)}
+              disabled={browseLoading || !!browseError || browsePagination.page >= browsePagination.totalPages}
+              className="inline-flex items-center gap-1 px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next <HiChevronRight />
+            </button>
+          </nav>
+        </div>
       </div>
 
       {/* Search */}

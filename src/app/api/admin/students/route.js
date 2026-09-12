@@ -64,7 +64,9 @@ export async function GET(request) {
     const department = (searchParams.get('department') || '').trim();
     const sort = (searchParams.get('sort') || 'recent').trim();
     const limitRaw = Number(searchParams.get('limit') || 100);
-    const limit = Math.max(1, Math.min(2000, Number.isFinite(limitRaw) ? limitRaw : 100));
+    const limit = Math.max(1, Math.min(2000, Number.isFinite(limitRaw) ? Math.trunc(limitRaw) : 100));
+    const pageRaw = Number(searchParams.get('page') || 1);
+    const requestedPage = Number.isFinite(pageRaw) ? Math.max(1, Math.trunc(pageRaw)) : 1;
 
     const filter = { role: 'student', ...notLecturer };
     if (department) {
@@ -74,9 +76,13 @@ export async function GET(request) {
       filter.department = department;
     }
 
-    let sortSpec = { created_at: -1 };
-    if (sort === 'name') sortSpec = { full_name: 1 };
-    else if (sort === 'reg_no') sortSpec = { registration_no: 1 };
+    const total = isExport ? 0 : await User.countDocuments(filter);
+    const totalPages = Math.max(1, Math.ceil(total / limit));
+    const page = isExport ? 1 : Math.min(requestedPage, totalPages);
+
+    let sortSpec = { created_at: -1, _id: -1 };
+    if (sort === 'name') sortSpec = { full_name: 1, _id: 1 };
+    else if (sort === 'reg_no') sortSpec = { registration_no: 1, _id: 1 };
 
     const students = await User.find(filter)
       .select(
@@ -85,6 +91,7 @@ export async function GET(request) {
           'linkedin created_at'
       )
       .sort(sortSpec)
+      .skip(isExport ? 0 : (page - 1) * limit)
       .limit(isExport ? 0 : limit)
       .lean();
 
@@ -130,7 +137,11 @@ export async function GET(request) {
       });
     }
 
-    return NextResponse.json({ students: enriched, mode: 'browse' });
+    return NextResponse.json({
+      students: enriched,
+      mode: 'browse',
+      pagination: { page, limit, total, totalPages },
+    });
   } catch (error) {
     if (error.message === 'Unauthorized') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     if (error.message === 'Forbidden') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
