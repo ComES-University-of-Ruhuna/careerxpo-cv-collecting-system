@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import User from '@/models/User';
 import Bid from '@/models/Bid';
+import Job from '@/models/Job';
+import Company from '@/models/Company';
 import { requirePermission, ADMIN_PERMISSIONS } from '@/lib/auth';
 import { DEPARTMENT_VALUES } from '@/lib/departments';
 
@@ -20,6 +22,7 @@ export async function GET(request) {
 
     const { searchParams } = new URL(request.url);
     const q = searchParams.get('q')?.trim();
+    const isExport = searchParams.get('export') === '1';
 
     // Users who have been granted any admin capability (e.g. lecturers with
     // sub-admin permissions) are not "students" for the purposes of these
@@ -32,7 +35,7 @@ export async function GET(request) {
     };
 
     // Search mode — preserves the original behaviour used by the search bar.
-    if (q) {
+    if (q && !isExport) {
       if (q.length < 2) {
         return NextResponse.json({ students: [] });
       }
@@ -82,7 +85,7 @@ export async function GET(request) {
           'linkedin created_at'
       )
       .sort(sortSpec)
-      .limit(limit)
+      .limit(isExport ? 0 : limit)
       .lean();
 
     // Aggregate bid counts in a single query so we don't hit the DB per row.
@@ -90,18 +93,41 @@ export async function GET(request) {
     const bidCountsAgg = ids.length
       ? await Bid.aggregate([
           { $match: { user_id: { $in: ids } } },
-          { $group: { _id: '$user_id', count: { $sum: 1 } } },
+          { $group: {
+            _id: '$user_id',
+            count: { $sum: 1 },
+            ...(isExport ? { job_ids: { $addToSet: '$job_id' } } : {}),
+          } },
         ])
       : [];
     const bidCounts = new Map(bidCountsAgg.map((row) => [String(row._id), row.count]));
+    const bidJobs = new Map(bidCountsAgg.map((row) => [String(row._id), row.job_ids || []]));
 
     const enriched = students.map((s) => ({
       ...s,
       bids_count: bidCounts.get(String(s._id)) || 0,
+      ...(isExport ? { bid_job_ids: bidJobs.get(String(s._id)) || [] } : {}),
     }));
 
     if (sort === 'bids') {
       enriched.sort((a, b) => (b.bids_count || 0) - (a.bids_count || 0));
+    }
+
+    if (isExport) {
+      const jobs = await Job.find({})
+        .select('title company_id')
+        .populate({ path: 'company_id', select: 'name', model: Company })
+        .sort({ title: 1, _id: 1 })
+        .lean();
+      return NextResponse.json({
+        students: enriched,
+        jobs: jobs.map((job) => ({
+          _id: job._id,
+          title: job.title,
+          company_name: job.company_id?.name || 'Unknown company',
+        })),
+        mode: 'export',
+      });
     }
 
     return NextResponse.json({ students: enriched, mode: 'browse' });
