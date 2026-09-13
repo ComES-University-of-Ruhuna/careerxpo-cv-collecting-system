@@ -4,7 +4,7 @@ jest.mock('../../src/lib/auth', () => ({
   ADMIN_PERMISSIONS: { STUDENTS: 'students' },
 }));
 jest.mock('../../src/models/User', () => ({ __esModule: true, default: { find: jest.fn(), countDocuments: jest.fn() } }));
-jest.mock('../../src/models/Bid', () => ({ __esModule: true, default: { aggregate: jest.fn() } }));
+jest.mock('../../src/models/Bid', () => ({ __esModule: true, default: { aggregate: jest.fn(), distinct: jest.fn() } }));
 jest.mock('../../src/models/Job', () => ({ __esModule: true, default: { find: jest.fn() } }));
 jest.mock('../../src/models/Company', () => ({ __esModule: true, default: {} }));
 
@@ -31,6 +31,7 @@ describe('admin student export', () => {
     };
     User.find.mockReturnValue(studentQuery);
     User.countDocuments.mockResolvedValue(250);
+    Bid.distinct.mockResolvedValue(['student1']);
     Bid.aggregate.mockResolvedValue([{ _id: 'student1', count: 2, job_ids: ['job1', 'job2'] }]);
     Job.find.mockReturnValue({
       select: jest.fn().mockReturnThis(),
@@ -48,7 +49,11 @@ describe('admin student export', () => {
     expect(response.status).toBe(200);
     const data = await response.json();
     expect(requirePermission).toHaveBeenCalledWith(expect.anything(), 'students');
-    expect(User.find).toHaveBeenCalledWith({ role: 'student', department: 'COM' });
+    expect(User.find).toHaveBeenCalledWith({
+      department: 'COM',
+      $or: [{ role: 'student' }, { _id: { $in: ['student1'] } }],
+    });
+    expect(Bid.distinct).toHaveBeenCalledWith('user_id');
     expect(studentQuery.limit).toHaveBeenCalledWith(0);
     expect(studentQuery.sort).toHaveBeenCalledWith({ full_name: 1, _id: 1 });
     expect(studentQuery.skip).toHaveBeenCalledWith(0);
@@ -64,9 +69,12 @@ describe('admin student export', () => {
     ]);
   });
 
-  it.each(['xlsx', 'csv'])('includes student admins in company-filtered %s downloads', async (format) => {
+  it.each([
+    ['xlsx', 'student'], ['csv', 'student'], ['xlsx', 'admin'], ['csv', 'admin'],
+  ])('includes applicants in company-filtered %s downloads with role %s', async (format, role) => {
+    Bid.distinct.mockResolvedValue(['student-admin', 'other-student']);
     studentQuery.lean.mockResolvedValue([
-      { _id: 'student-admin', full_name: 'Student Admin', role: 'student', admin_permissions: ['companies'] },
+      { _id: 'student-admin', full_name: 'Student Admin', role, admin_permissions: ['companies'] },
       { _id: 'other-student', full_name: 'Other Applicant', role: 'student' },
     ]);
     Bid.aggregate.mockResolvedValue([
@@ -76,7 +84,9 @@ describe('admin student export', () => {
 
     const response = await GET({ url: 'http://localhost/api/admin/students?export=1' });
     expect(response.status).toBe(200);
-    expect(User.find).toHaveBeenCalledWith({ role: 'student' });
+    expect(User.find).toHaveBeenCalledWith({
+      $or: [{ role: 'student' }, { _id: { $in: ['student-admin', 'other-student'] } }],
+    });
     expect(Bid.aggregate).toHaveBeenCalledWith(expect.arrayContaining([
       { $match: { user_id: { $in: ['student-admin', 'other-student'] } } },
     ]));
@@ -92,6 +102,13 @@ describe('admin student export', () => {
     ]);
   });
 
+  it('does not include non-student accounts when there are no recorded bids', async () => {
+    Bid.distinct.mockResolvedValue([]);
+    const response = await GET({ url: 'http://localhost/api/admin/students?export=1' });
+    expect(response.status).toBe(200);
+    expect(User.find).toHaveBeenCalledWith({ $or: [{ role: 'student' }, { _id: { $in: [] } }] });
+  });
+
   it('keeps ordinary browse requests limited and does not load jobs', async () => {
     const response = await GET({ url: 'http://localhost/api/admin/students' });
     const data = await response.json();
@@ -101,6 +118,7 @@ describe('admin student export', () => {
     expect(data.pagination).toEqual({ page: 1, limit: 100, total: 250, totalPages: 3 });
     expect(data.students[0]).not.toHaveProperty('bid_job_ids');
     expect(Job.find).not.toHaveBeenCalled();
+    expect(Bid.distinct).not.toHaveBeenCalled();
   });
 
   it('returns the second page with the requested page size', async () => {

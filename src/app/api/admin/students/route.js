@@ -68,13 +68,17 @@ export async function GET(request) {
     const pageRaw = Number(searchParams.get('page') || 1);
     const requestedPage = Number.isFinite(pageRaw) ? Math.max(1, Math.trunc(pageRaw)) : 1;
 
-    const filter = { role: 'student', ...(isExport ? {} : notLecturer) };
+    const filter = {};
     if (department) {
       if (!DEPARTMENT_VALUES.includes(department)) {
         return NextResponse.json({ error: 'Invalid department' }, { status: 400 });
       }
       filter.department = department;
     }
+
+    Object.assign(filter, isExport ? {
+      $or: [{ role: 'student' }, { _id: { $in: await Bid.distinct('user_id') } }],
+    } : { role: 'student', ...notLecturer });
 
     const total = isExport ? 0 : await User.countDocuments(filter);
     const totalPages = Math.max(1, Math.ceil(total / limit));
