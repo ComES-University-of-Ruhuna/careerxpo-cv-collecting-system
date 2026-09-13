@@ -131,6 +131,7 @@ export async function GET(request) {
         jobs: jobs.map((job) => ({
           _id: job._id,
           title: job.title,
+          company_id: job.company_id?._id || null,
           company_name: job.company_id?.name || 'Unknown company',
         })),
         mode: 'export',

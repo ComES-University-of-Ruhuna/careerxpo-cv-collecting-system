@@ -36,8 +36,25 @@ export function getStudentExportJobs(students, jobs) {
   }
   return Array.from(openings.values(), (job) => {
     const label = `${job.company_name} - ${job.title}`;
-    return { ...job, label: labels.get(label) > 1 || job.title === 'Unavailable opening' ? `${label} [${job._id}]` : label };
+    return { ...job, company_id: job.company_id ? String(job.company_id) : 'unknown', label: labels.get(label) > 1 || job.title === 'Unavailable opening' ? `${label} [${job._id}]` : label };
   });
+}
+
+export function filterStudentExportStudents(students, selectedJobIds) {
+  if (selectedJobIds == null) return students;
+  const jobIds = new Set(selectedJobIds.map(String));
+  return students.filter((student) => (student.bid_job_ids || []).some((jobId) => jobIds.has(String(jobId))));
+}
+
+export function getStudentExportSelection(students, jobs, companyId = '', jobId = '') {
+  const companies = Array.from(new Map(jobs.map((job) => [job.company_id, {
+    _id: job.company_id, name: job.company_name,
+  }])).values()).sort((first, second) => first.name.localeCompare(second.name));
+  const companyJobs = companyId ? jobs.filter((job) => job.company_id === companyId) : jobs;
+  const includedJobs = jobId ? companyJobs.filter((job) => job._id === jobId) : companyJobs;
+  const exportStudents = filterStudentExportStudents(students,
+    companyId || jobId ? includedJobs.map((job) => job._id) : null);
+  return { companies, companyJobs, includedJobs, exportStudents };
 }
 
 export function buildStudentWorkbook(XLSX, students, columns, jobs, format = 'xlsx') {

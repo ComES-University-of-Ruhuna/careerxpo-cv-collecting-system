@@ -35,7 +35,7 @@ describe('admin student export', () => {
       populate: jest.fn().mockReturnThis(),
       sort: jest.fn().mockReturnThis(),
       lean: jest.fn().mockResolvedValue([
-        { _id: 'job1', title: 'Engineer', company_id: { name: 'Acme' } },
+        { _id: 'job1', title: 'Engineer', company_id: { _id: 'company1', name: 'Acme' } },
         { _id: 'job2', title: 'Engineer', company_id: null },
       ]),
     });
@@ -57,8 +57,8 @@ describe('admin student export', () => {
     expect(data.students[0].bid_job_ids).toEqual(['job1', 'job2']);
     expect(data.students[1].bid_job_ids).toEqual([]);
     expect(data.jobs).toEqual([
-      { _id: 'job1', title: 'Engineer', company_name: 'Acme' },
-      { _id: 'job2', title: 'Engineer', company_name: 'Unknown company' },
+      { _id: 'job1', title: 'Engineer', company_id: 'company1', company_name: 'Acme' },
+      { _id: 'job2', title: 'Engineer', company_id: null, company_name: 'Unknown company' },
     ]);
   });
 

@@ -7,7 +7,7 @@ import { HiX, HiDownload, HiRefresh } from 'react-icons/hi';
 import { DEPARTMENTS } from '@/lib/departments';
 import {
   STUDENT_EXPORT_COLUMNS, DEFAULT_STUDENT_EXPORT_FIELDS,
-  getStudentExportJobs, buildStudentWorkbook,
+  getStudentExportJobs, getStudentExportSelection, buildStudentWorkbook,
 } from '@/lib/student-export';
 
 function todayStamp() {
@@ -24,8 +24,9 @@ export default function ExportStudentsModal({ open, onClose, token }) {
   const [students, setStudents] = useState([]);
   const [jobs, setJobs] = useState([]);
   const [fields, setFields] = useState(DEFAULT_STUDENT_EXPORT_FIELDS);
-  const [selectedJobs, setSelectedJobs] = useState(null);
-  const [jobQuery, setJobQuery] = useState('');
+  const [companyId, setCompanyId] = useState('');
+  const [jobId, setJobId] = useState('');
+  const [includeApplications, setIncludeApplications] = useState(true);
 
   useEffect(() => {
     if (open) {
@@ -33,8 +34,9 @@ export default function ExportStudentsModal({ open, onClose, token }) {
       setFormat('xlsx');
       setBusy(false);
       setFields(DEFAULT_STUDENT_EXPORT_FIELDS);
-      setSelectedJobs(null);
-      setJobQuery('');
+      setCompanyId('');
+      setJobId('');
+      setIncludeApplications(true);
     }
   }, [open]);
 
@@ -57,7 +59,8 @@ export default function ExportStudentsModal({ open, onClose, token }) {
         if (controller.signal.aborted) return;
         setStudents(data.students || []);
         setJobs(getStudentExportJobs(data.students || [], data.jobs || []));
-        setSelectedJobs(null);
+        setCompanyId('');
+        setJobId('');
       } catch (err) {
         if (!controller.signal.aborted) setError(err.message || 'Failed to load students.');
       } finally {
@@ -76,19 +79,12 @@ export default function ExportStudentsModal({ open, onClose, token }) {
   if (!open) return null;
 
   const columns = STUDENT_EXPORT_COLUMNS.filter((column) => fields.includes(column.key));
-  const includedJobs = selectedJobs === null ? jobs : jobs.filter((job) => selectedJobs.includes(job._id));
-  const visibleJobs = jobs.filter((job) => job.label.toLowerCase().includes(jobQuery.toLowerCase()));
+  const { companies, companyJobs, includedJobs: matchingJobs, exportStudents } = getStudentExportSelection(students, jobs, companyId, jobId);
+  const includedJobs = includeApplications ? matchingJobs : [];
   const columnCount = columns.length + includedJobs.length;
 
   function toggleField(key) {
     setFields((current) => current.includes(key) ? current.filter((field) => field !== key) : [...current, key]);
-  }
-
-  function toggleJob(id) {
-    setSelectedJobs((current) => {
-      const selected = current === null ? jobs.map((job) => job._id) : current;
-      return selected.includes(id) ? selected.filter((jobId) => jobId !== id) : [...selected, id];
-    });
   }
 
   async function handleExport() {
@@ -96,13 +92,13 @@ export default function ExportStudentsModal({ open, onClose, token }) {
       toast.error('Not authenticated.');
       return;
     }
-    if (busy || loading || error || !students.length || !columnCount) return;
+    if (busy || loading || error || !exportStudents.length || !columnCount) return;
     setBusy(true);
     try {
       const XLSX = await import('xlsx');
-      const workbook = buildStudentWorkbook(XLSX, students, columns, includedJobs, format);
+      const workbook = buildStudentWorkbook(XLSX, exportStudents, columns, includedJobs, format);
       XLSX.writeFile(workbook, `${fileBase}.${format}`, { bookType: format });
-      toast.success(`Exported ${students.length} student${students.length === 1 ? '' : 's'}.`);
+      toast.success(`Exported ${exportStudents.length} student${exportStudents.length === 1 ? '' : 's'}.`);
       onClose?.();
     } catch (err) {
       console.error('Export failed:', err);
@@ -192,32 +188,52 @@ export default function ExportStudentsModal({ open, onClose, token }) {
           </fieldset>
 
           <fieldset disabled={busy || loading || !!error} className="border-t border-gray-200 pt-4 min-w-0">
-            <legend className="text-sm font-semibold text-gray-900 pr-2">Job application columns</legend>
+            <legend className="text-sm font-semibold text-gray-900 pr-2">Applications</legend>
             {loading ? <p role="status" className="text-sm text-gray-500">Loading students and openings...</p> : error ? (
               <p role="alert" className="text-sm text-red-700">{error}</p>
-            ) : jobs.length === 0 ? <p className="text-sm text-gray-500">No job openings.</p> : (
+            ) : (
               <>
-                <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-                  <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
-                    <input type="checkbox" checked={includedJobs.length === jobs.length} ref={(input) => { if (input) input.indeterminate = includedJobs.length > 0 && includedJobs.length < jobs.length; }} onChange={(event) => setSelectedJobs(event.target.checked ? null : [])} className="accent-primary-600 h-4 w-4" />
-                    All openings ({includedJobs.length}/{jobs.length})
-                  </label>
-                  <input type="search" aria-label="Search job openings" placeholder="Search openings" value={jobQuery} onChange={(event) => setJobQuery(event.target.value)} className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-full sm:w-60" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                  <div className="min-w-0">
+                    <label htmlFor="student-export-company" className="block text-sm font-medium text-gray-700 mb-1">Company</label>
+                    <select
+                      id="student-export-company"
+                      value={companyId}
+                      onChange={(event) => { setCompanyId(event.target.value); setJobId(''); }}
+                      className="w-full min-w-0 px-3 py-2.5 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary-500 outline-none"
+                    >
+                      <option value="">All companies</option>
+                      {companies.map((company) => (
+                        <option key={company._id} value={company._id}>{company.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="min-w-0">
+                    <label htmlFor="student-export-vacancy" className="block text-sm font-medium text-gray-700 mb-1">Job vacancy</label>
+                    <select
+                      id="student-export-vacancy"
+                      value={jobId}
+                      onChange={(event) => setJobId(event.target.value)}
+                      className="w-full min-w-0 px-3 py-2.5 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary-500 outline-none"
+                    >
+                      <option value="">All job openings</option>
+                      {companyJobs.map((job) => (
+                        <option key={job._id} value={job._id}>{job.label}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-                <div className="max-h-48 overflow-y-auto space-y-1">
-                  {visibleJobs.map((job) => (
-                    <label key={job._id} className="flex items-start gap-2 py-2 text-sm text-gray-700 cursor-pointer">
-                      <input type="checkbox" checked={selectedJobs === null || selectedJobs.includes(job._id)} onChange={() => toggleJob(job._id)} className="accent-primary-600 h-4 w-4 shrink-0 mt-0.5" />
-                      <span className="min-w-0 break-words">{job.label}</span>
-                    </label>
-                  ))}
-                  {!visibleJobs.length && <p className="text-sm text-gray-500 py-2">No matching openings.</p>}
-                </div>
+                <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                  <input type="checkbox" checked={includeApplications} onChange={(event) => setIncludeApplications(event.target.checked)} className="accent-primary-600 h-4 w-4 shrink-0" />
+                  Include job application columns
+                </label>
+                {!companyJobs.length && <p className="text-sm text-gray-500 mt-2">No job openings.</p>}
+                {!exportStudents.length && <p className="text-sm text-gray-500 mt-2">No matching students.</p>}
               </>
             )}
           </fieldset>
           {error && <button type="button" onClick={() => setRetry((current) => current + 1)} className="inline-flex items-center gap-2 text-sm text-primary-700"><HiRefresh /> Retry</button>}
-          {!loading && !error && <p role="status" className="text-sm text-gray-500">{students.length} students · {columnCount} columns</p>}
+          {!loading && !error && <p role="status" className="text-sm text-gray-500">{exportStudents.length} students · {columnCount} columns</p>}
           {!columnCount && <p role="alert" className="text-sm text-red-600">Select at least one column.</p>}
         </div>
 
@@ -233,7 +249,7 @@ export default function ExportStudentsModal({ open, onClose, token }) {
           <button
             type="button"
             onClick={handleExport}
-            disabled={busy || loading || !!error || !students.length || !columnCount}
+            disabled={busy || loading || !!error || !exportStudents.length || !columnCount}
             className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50"
           >
             <HiDownload />
