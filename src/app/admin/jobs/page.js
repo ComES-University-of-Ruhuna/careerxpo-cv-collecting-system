@@ -2,7 +2,7 @@
 
 import { formatDateTime, formatDateTimeInput, TIME_ZONE_LABEL } from '@/lib/date-time';
 import { useAuth } from '@/components/AuthProvider';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { HiPlus, HiPencil, HiTrash, HiX, HiLockClosed, HiLockOpen, HiDownload, HiFolderOpen } from 'react-icons/hi';
 
@@ -18,6 +18,22 @@ export default function AdminJobs() {
   const [formula, setFormula] = useState({ base_value: '20', rating: 3, domain_demand: '1.0' });
   const [loadingFolder, setLoadingFolder] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState('');
+  const editDialogRef = useRef(null);
+
+  useEffect(() => {
+    if (!showForm || !editing) return;
+    const dialog = editDialogRef.current;
+    const previousFocus = document.activeElement;
+    const previousOverflow = document.body.style.overflow;
+    dialog.showModal();
+    document.body.style.overflow = 'hidden';
+    return () => {
+      dialog.close();
+      document.body.style.overflow = previousOverflow;
+      previousFocus?.focus({ preventScroll: true });
+    };
+  }, [showForm, editing]);
 
   const allDepartments = ['DEIE', 'DMME', 'COM', 'DCEE', 'DMENA'];
   const domainDemandOptions = [
@@ -65,6 +81,7 @@ export default function AdminJobs() {
   }
 
   function openNew() {
+    setFormError('');
     setForm({ company_id: companies[0]?._id || '', title: '', description: '', credit_cost: '10', max_applicants: '', deadline: '', departments: [] });
     setFormula({ base_value: '20', rating: 3, domain_demand: '1.0' });
     setCreditMethod('manual');
@@ -73,6 +90,7 @@ export default function AdminJobs() {
   }
 
   function openEdit(job) {
+    setFormError('');
     setForm({
       company_id: job.company_id?._id || job.company_id,
       title: job.title,
@@ -91,7 +109,9 @@ export default function AdminJobs() {
   async function handleSubmit(e) {
     e.preventDefault();
     if (submitting) return;
+    setFormError('');
     if (!form.company_id || !form.title) {
+      setFormError('Company and title are required');
       toast.error('Company and title are required');
       return;
     }
@@ -99,17 +119,20 @@ export default function AdminJobs() {
     let creditCost;
     if (creditMethod === 'formula') {
       if (!form.max_applicants) {
+        setFormError('Applicant Limit is required for formula calculation');
         toast.error('Applicant Limit is required for formula calculation');
         return;
       }
       creditCost = calculatedCredit;
       if (!creditCost || creditCost < 1) {
+        setFormError('Formula inputs are invalid');
         toast.error('Formula inputs are invalid');
         return;
       }
     } else {
       creditCost = parseInt(form.credit_cost, 10);
       if (!creditCost || creditCost < 1) {
+        setFormError('Credit cost must be a positive integer');
         toast.error('Credit cost must be a positive integer');
         return;
       }
@@ -117,6 +140,7 @@ export default function AdminJobs() {
 
     const maxApplicants = form.max_applicants ? parseInt(form.max_applicants, 10) : null;
     if (form.max_applicants && (isNaN(maxApplicants) || maxApplicants < 1)) {
+      setFormError('Max applicants must be a positive integer');
       toast.error('Max applicants must be a positive integer');
       return;
     }
@@ -132,12 +156,13 @@ export default function AdminJobs() {
         body: JSON.stringify({ ...form, credit_cost: creditCost, max_applicants: maxApplicants, deadline: form.deadline || null }),
       });
       const data = await res.json();
-      if (!res.ok) { toast.error(data.error); return; }
+      if (!res.ok) { setFormError(data.error || 'Operation failed'); toast.error(data.error || 'Operation failed'); return; }
 
       toast.success(editing ? 'Job updated' : 'Job created');
       setShowForm(false);
       loadData();
     } catch {
+      setFormError('Operation failed');
       toast.error('Operation failed');
     } finally {
       setSubmitting(false);
@@ -229,6 +254,8 @@ export default function AdminJobs() {
     return <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" /></div>;
   }
 
+  const FormContainer = editing ? 'dialog' : 'div';
+
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
@@ -245,12 +272,21 @@ export default function AdminJobs() {
       )}
 
       {showForm && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="font-semibold text-gray-900">{editing ? 'Edit Job' : 'New Job'}</h2>
-            <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600"><HiX /></button>
+        <FormContainer
+          ref={editing ? editDialogRef : undefined}
+          aria-labelledby="job-form-title"
+          onCancel={editing ? (event) => { event.preventDefault(); if (!submitting) setShowForm(false); } : undefined}
+          onKeyDown={editing ? (event) => { if (event.key === 'Escape') { event.preventDefault(); if (!submitting) setShowForm(false); } } : undefined}
+          onClick={editing ? (event) => { if (event.target === event.currentTarget && !submitting) setShowForm(false); } : undefined}
+          className={editing
+            ? 'fixed inset-0 m-auto w-[calc(100%-2rem)] max-w-3xl max-h-[90dvh] p-0 rounded-lg border border-gray-200 bg-white shadow-xl backdrop:bg-black/50 overflow-hidden'
+            : 'bg-white rounded-xl border border-gray-200 p-6 mb-6'}
+        >
+          <div className={editing ? 'flex justify-between items-center px-5 py-4 border-b border-gray-200' : 'flex justify-between items-center mb-4'}>
+            <h2 id="job-form-title" className="font-semibold text-gray-900">{editing ? 'Edit Job' : 'New Job'}</h2>
+            <button type="button" onClick={() => setShowForm(false)} disabled={submitting} aria-label="Close job form" title="Close" className="text-gray-400 hover:text-gray-600 disabled:opacity-50"><HiX /></button>
           </div>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className={editing ? 'max-h-[calc(90dvh-4rem)] overflow-y-auto px-5 pt-4 space-y-4' : 'space-y-4'}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Company *</label>
@@ -263,7 +299,7 @@ export default function AdminJobs() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Job Title *</label>
-                <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required />
+                <input aria-label="Job Title" autoFocus={!!editing} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" required />
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -344,7 +380,7 @@ export default function AdminJobs() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Company Rating (R) *</label>
-                    <div role="radiogroup" aria-label="Company Rating" className="flex gap-2">
+                    <div role="radiogroup" aria-label="Company Rating" className="flex flex-wrap gap-2">
                       {[1, 2, 3, 4, 5].map((r) => (
                         <button
                           key={r}
@@ -407,6 +443,9 @@ export default function AdminJobs() {
               <label className="block text-sm font-medium text-gray-700 mb-1">Description (Markdown supported)</label>
               <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={5} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" />
             </div>
+            <div className={editing ? 'sticky bottom-0 bg-white border-t border-gray-200 py-4 flex flex-wrap justify-end gap-2' : 'flex flex-wrap gap-2'}>
+            {formError && <p role="alert" className="w-full text-sm text-red-700">{formError}</p>}
+            {editing && <button type="button" disabled={submitting} onClick={() => setShowForm(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50">Cancel</button>}
             <button
               type="submit"
               disabled={submitting}
@@ -414,8 +453,9 @@ export default function AdminJobs() {
             >
               {submitting ? (editing ? 'Updating...' : 'Creating...') : editing ? 'Update Job' : 'Create Job'}
             </button>
+            </div>
           </form>
-        </div>
+        </FormContainer>
       )}
 
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
@@ -472,7 +512,7 @@ export default function AdminJobs() {
                     <button onClick={() => toggleClose(j)} title={j.is_closed ? 'Reopen' : 'Close'} className={`p-1 ${j.is_closed ? 'text-green-500 hover:text-green-700' : 'text-amber-500 hover:text-amber-700'}`}>
                       {j.is_closed ? <HiLockOpen /> : <HiLockClosed />}
                     </button>
-                    <button onClick={() => openEdit(j)} className="text-gray-400 hover:text-primary-600 p-1 ml-1"><HiPencil /></button>
+                    <button onClick={() => openEdit(j)} aria-label={`Edit ${j.title}`} title="Edit job" className="text-gray-400 hover:text-primary-600 p-1 ml-1"><HiPencil /></button>
                     <button onClick={() => handleDelete(j._id)} className="text-gray-400 hover:text-red-600 p-1 ml-1"><HiTrash /></button>
                   </td>
                 </tr>
