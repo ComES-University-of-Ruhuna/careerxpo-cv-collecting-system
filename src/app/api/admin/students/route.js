@@ -77,6 +77,7 @@ export async function GET(request) {
     }
 
     Object.assign(filter, isExport ? {
+      payment_slip_status: 'verified',
       $or: [{ role: 'student' }, { _id: { $in: await Bid.distinct('user_id') } }],
     } : { role: 'student', ...notLecturer });
 

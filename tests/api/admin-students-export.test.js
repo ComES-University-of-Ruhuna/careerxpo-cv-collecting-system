@@ -51,6 +51,7 @@ describe('admin student export', () => {
     expect(requirePermission).toHaveBeenCalledWith(expect.anything(), 'students');
     expect(User.find).toHaveBeenCalledWith({
       department: 'COM',
+      payment_slip_status: 'verified',
       $or: [{ role: 'student' }, { _id: { $in: ['student1'] } }],
     });
     expect(Bid.distinct).toHaveBeenCalledWith('user_id');
@@ -74,8 +75,8 @@ describe('admin student export', () => {
   ])('includes applicants in company-filtered %s downloads with role %s', async (format, role) => {
     Bid.distinct.mockResolvedValue(['student-admin', 'other-student']);
     studentQuery.lean.mockResolvedValue([
-      { _id: 'student-admin', full_name: 'Student Admin', role, admin_permissions: ['companies'] },
-      { _id: 'other-student', full_name: 'Other Applicant', role: 'student' },
+      { _id: 'student-admin', full_name: 'Student Admin', role, admin_permissions: ['companies'], payment_slip_status: 'verified' },
+      { _id: 'other-student', full_name: 'Other Applicant', role: 'student', payment_slip_status: 'verified' },
     ]);
     Bid.aggregate.mockResolvedValue([
       { _id: 'student-admin', count: 1, job_ids: ['job1'] },
@@ -85,6 +86,7 @@ describe('admin student export', () => {
     const response = await GET({ url: 'http://localhost/api/admin/students?export=1' });
     expect(response.status).toBe(200);
     expect(User.find).toHaveBeenCalledWith({
+      payment_slip_status: 'verified',
       $or: [{ role: 'student' }, { _id: { $in: ['student-admin', 'other-student'] } }],
     });
     expect(Bid.aggregate).toHaveBeenCalledWith(expect.arrayContaining([
@@ -106,7 +108,31 @@ describe('admin student export', () => {
     Bid.distinct.mockResolvedValue([]);
     const response = await GET({ url: 'http://localhost/api/admin/students?export=1' });
     expect(response.status).toBe(200);
-    expect(User.find).toHaveBeenCalledWith({ $or: [{ role: 'student' }, { _id: { $in: [] } }] });
+    expect(User.find).toHaveBeenCalledWith({ payment_slip_status: 'verified', $or: [{ role: 'student' }, { _id: { $in: [] } }] });
+  });
+
+  it.each(['xlsx', 'csv'])('exports only verified payments in %s even when no company is selected', async (format) => {
+    const candidates = ['verified', 'pending', 'rejected', 'none', undefined].map((paymentStatus, index) => ({
+      _id: `student${index}`, full_name: paymentStatus || 'Missing status', role: 'student', payment_slip_status: paymentStatus,
+    }));
+    User.find.mockImplementation((filter) => {
+      studentQuery.lean.mockResolvedValue(candidates.filter((student) => (
+        !filter.payment_slip_status || student.payment_slip_status === filter.payment_slip_status
+      )));
+      return studentQuery;
+    });
+    Bid.aggregate.mockResolvedValue([]);
+
+    const response = await GET({ url: 'http://localhost/api/admin/students?export=1' });
+    expect(response.status).toBe(200);
+    const data = await response.json();
+    expect(data.students.map((student) => student._id)).toEqual(['student0']);
+    const selection = getStudentExportSelection(data.students, getStudentExportJobs(data.students, data.jobs));
+    const workbook = buildStudentWorkbook(XLSX, selection.exportStudents, [STUDENT_EXPORT_COLUMNS[0]], [], format);
+    const parsed = XLSX.read(XLSX.write(workbook, { type: 'buffer', bookType: format }), { type: 'buffer' });
+    expect(XLSX.utils.sheet_to_json(parsed.Sheets[parsed.SheetNames[0]], { header: 1 })).toEqual([
+      ['Full Name'], ['verified'],
+    ]);
   });
 
   it('keeps ordinary browse requests limited and does not load jobs', async () => {
@@ -119,6 +145,7 @@ describe('admin student export', () => {
     expect(data.students[0]).not.toHaveProperty('bid_job_ids');
     expect(Job.find).not.toHaveBeenCalled();
     expect(Bid.distinct).not.toHaveBeenCalled();
+    expect(User.find.mock.calls[0][0]).not.toHaveProperty('payment_slip_status');
   });
 
   it('returns the second page with the requested page size', async () => {
