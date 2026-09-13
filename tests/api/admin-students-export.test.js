@@ -13,6 +13,8 @@ import { requirePermission } from '../../src/lib/auth';
 import User from '../../src/models/User';
 import Bid from '../../src/models/Bid';
 import Job from '../../src/models/Job';
+import * as XLSX from 'xlsx';
+import { STUDENT_EXPORT_COLUMNS, getStudentExportJobs, getStudentExportSelection, buildStudentWorkbook } from '../../src/lib/student-export';
 
 describe('admin student export', () => {
   let studentQuery;
@@ -46,7 +48,7 @@ describe('admin student export', () => {
     expect(response.status).toBe(200);
     const data = await response.json();
     expect(requirePermission).toHaveBeenCalledWith(expect.anything(), 'students');
-    expect(User.find).toHaveBeenCalledWith(expect.objectContaining({ role: 'student', department: 'COM', $or: expect.any(Array) }));
+    expect(User.find).toHaveBeenCalledWith({ role: 'student', department: 'COM' });
     expect(studentQuery.limit).toHaveBeenCalledWith(0);
     expect(studentQuery.sort).toHaveBeenCalledWith({ full_name: 1, _id: 1 });
     expect(studentQuery.skip).toHaveBeenCalledWith(0);
@@ -59,6 +61,34 @@ describe('admin student export', () => {
     expect(data.jobs).toEqual([
       { _id: 'job1', title: 'Engineer', company_id: 'company1', company_name: 'Acme' },
       { _id: 'job2', title: 'Engineer', company_id: null, company_name: 'Unknown company' },
+    ]);
+  });
+
+  it.each(['xlsx', 'csv'])('includes student admins in company-filtered %s downloads', async (format) => {
+    studentQuery.lean.mockResolvedValue([
+      { _id: 'student-admin', full_name: 'Student Admin', role: 'student', admin_permissions: ['companies'] },
+      { _id: 'other-student', full_name: 'Other Applicant', role: 'student' },
+    ]);
+    Bid.aggregate.mockResolvedValue([
+      { _id: 'student-admin', count: 1, job_ids: ['job1'] },
+      { _id: 'other-student', count: 1, job_ids: ['job2'] },
+    ]);
+
+    const response = await GET({ url: 'http://localhost/api/admin/students?export=1' });
+    expect(response.status).toBe(200);
+    expect(User.find).toHaveBeenCalledWith({ role: 'student' });
+    expect(Bid.aggregate).toHaveBeenCalledWith(expect.arrayContaining([
+      { $match: { user_id: { $in: ['student-admin', 'other-student'] } } },
+    ]));
+    const data = await response.json();
+    const jobs = getStudentExportJobs(data.students, data.jobs);
+    const { exportStudents, includedJobs } = getStudentExportSelection(data.students, jobs, 'company1', 'job1');
+    const workbook = buildStudentWorkbook(XLSX, exportStudents, [STUDENT_EXPORT_COLUMNS[0]], includedJobs, format);
+    const bytes = XLSX.write(workbook, { type: 'buffer', bookType: format });
+    const parsed = XLSX.read(bytes, { type: 'buffer' });
+    expect(XLSX.utils.sheet_to_json(parsed.Sheets[parsed.SheetNames[0]], { header: 1 })).toEqual([
+      ['Full Name', 'Applied: Acme - Engineer'],
+      ['Student Admin', 'Yes'],
     ]);
   });
 

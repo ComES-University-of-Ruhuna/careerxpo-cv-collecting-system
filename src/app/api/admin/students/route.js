@@ -68,7 +68,7 @@ export async function GET(request) {
     const pageRaw = Number(searchParams.get('page') || 1);
     const requestedPage = Number.isFinite(pageRaw) ? Math.max(1, Math.trunc(pageRaw)) : 1;
 
-    const filter = { role: 'student', ...notLecturer };
+    const filter = { role: 'student', ...(isExport ? {} : notLecturer) };
     if (department) {
       if (!DEPARTMENT_VALUES.includes(department)) {
         return NextResponse.json({ error: 'Invalid department' }, { status: 400 });
